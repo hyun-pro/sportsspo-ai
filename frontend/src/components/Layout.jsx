@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { PricingBanner } from './PricingCard'
 
 const NAV_ITEMS = [
   {
@@ -114,11 +115,14 @@ export default function Layout({ children }) {
         </nav>
 
         {/* Bottom section */}
-        <div className="p-3 border-t border-dark-700">
-          {isPremium && (
-            <div className="px-3 py-2 bg-accent-green/10 rounded-xl border border-accent-green/20 mb-2">
+        <div className="border-t border-dark-700">
+          {/* 비구독자: 요금제 배너, 구독자: PRO 뱃지 */}
+          {isPremium ? (
+            <div className="mx-3 mt-3 mb-2 px-3 py-2 bg-accent-green/10 rounded-xl border border-accent-green/20">
               <span className="text-xs font-bold text-accent-green">PRO 구독중</span>
             </div>
+          ) : (
+            <div className="mt-3"><PricingBanner /></div>
           )}
           {!user ? (
             <div className="space-y-1">
