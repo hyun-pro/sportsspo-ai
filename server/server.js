@@ -1302,6 +1302,47 @@ async function syncBetmanData() {
 }
 
 // ── 배트맨 데이터 프록시 ─────────────────────────────────────
+// ── SofaScore 배당률 + 실시간 데이터 ─────────────────────────
+const SOFA_SPORTS = { soccer: 'football', baseball: 'baseball', basketball: 'basketball', hockey: 'ice-hockey', volleyball: 'volleyball', tennis: 'tennis' }
+
+app.get('/api/odds/:sport', async (req, res) => {
+  const sport = SOFA_SPORTS[req.params.sport] || req.params.sport
+  const date = req.query.date || new Date().toISOString().split('T')[0]
+  try {
+    const data = await fetchJSON(`https://api.sofascore.com/api/v1/sport/${sport}/scheduled-events/${date}`)
+    const events = (data?.events || []).slice(0, 100).map(e => ({
+      id: e.id,
+      league: e.tournament?.name,
+      leagueCountry: e.tournament?.category?.name,
+      home: e.homeTeam?.name,
+      away: e.awayTeam?.name,
+      homeId: e.homeTeam?.id,
+      awayId: e.awayTeam?.id,
+      startTime: e.startTimestamp ? new Date(e.startTimestamp * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Seoul' }) : null,
+      status: e.status?.type, // notstarted, inprogress, finished
+      homeScore: e.homeScore?.current,
+      awayScore: e.awayScore?.current,
+      period: e.status?.description,
+    }))
+    res.json({ events, total: data?.events?.length || 0 })
+  } catch (e) { res.json({ events: [], total: 0, error: e.message }) }
+})
+
+app.get('/api/odds/event/:id', async (req, res) => {
+  try {
+    const data = await fetchJSON(`https://api.sofascore.com/api/v1/event/${req.params.id}/odds/1/all`)
+    const markets = (data?.markets || []).map(m => ({
+      name: m.marketName,
+      choices: (m.choices || []).map(c => ({
+        name: c.name,
+        odds: c.fractionalValue,
+        decimalOdds: c.fractionalValue ? eval(c.fractionalValue) + 1 : null,
+      })),
+    }))
+    res.json({ markets, eventId: data?.eventId })
+  } catch (e) { res.json({ markets: [], error: e.message }) }
+})
+
 // 현재 발매중인 게임 목록
 app.get('/api/betman/active', async (req, res) => {
   try {

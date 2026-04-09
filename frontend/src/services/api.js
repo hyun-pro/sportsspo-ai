@@ -84,6 +84,10 @@ export const getAnnouncements = () => api.get('/announcements')
 export const createAnnouncement = (data) => api.post('/admin/announcements', data)
 export const deleteAnnouncement = (id) => api.delete(`/admin/announcements/${id}`)
 
+// Odds (SofaScore)
+export const getOdds = (sport, params) => api.get(`/odds/${sport}`, { params })
+export const getEventOdds = (eventId) => api.get(`/odds/event/${eventId}`)
+
 // Betman
 export const getBetmanGames = (params) => api.get('/betman/games', { params })
 
