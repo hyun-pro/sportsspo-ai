@@ -83,9 +83,12 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS games (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     external_id TEXT UNIQUE,
+    sport TEXT DEFAULT 'baseball',
     league TEXT NOT NULL,
     home_team TEXT NOT NULL,
     away_team TEXT NOT NULL,
+    home_logo TEXT,
+    away_logo TEXT,
     game_date TEXT NOT NULL,
     game_time TEXT,
     home_score INTEGER,
@@ -98,6 +101,8 @@ db.exec(`
     current_inning INTEGER,
     inning_half TEXT,
     outs INTEGER,
+    period TEXT,
+    clock TEXT,
     live_data TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
@@ -167,6 +172,11 @@ try { db.exec('ALTER TABLE games ADD COLUMN inning_half TEXT') } catch {}
 try { db.exec('ALTER TABLE games ADD COLUMN outs INTEGER') } catch {}
 try { db.exec('ALTER TABLE games ADD COLUMN live_data TEXT') } catch {}
 // 유저 신규 컬럼
+try { db.exec("ALTER TABLE games ADD COLUMN sport TEXT DEFAULT 'baseball'") } catch {}
+try { db.exec('ALTER TABLE games ADD COLUMN home_logo TEXT') } catch {}
+try { db.exec('ALTER TABLE games ADD COLUMN away_logo TEXT') } catch {}
+try { db.exec('ALTER TABLE games ADD COLUMN period TEXT') } catch {}
+try { db.exec('ALTER TABLE games ADD COLUMN clock TEXT') } catch {}
 try { db.exec('ALTER TABLE users ADD COLUMN nickname TEXT UNIQUE') } catch {}
 try { db.exec('ALTER TABLE users ADD COLUMN phone TEXT') } catch {}
 try { db.exec('ALTER TABLE users ADD COLUMN birthday TEXT') } catch {}
@@ -1468,9 +1478,10 @@ app.get('/api/dashboard/summary', (req, res) => {
 
 app.get('/api/dashboard/today', (req, res) => {
   const today = new Date().toISOString().split('T')[0]
-  const { league, sort } = req.query
+  const { league, sort, sport } = req.query
   let where = 'WHERE g.game_date = ?', params = [today]
   if (league) { where += ' AND g.league = ?'; params.push(league) }
+  if (sport) { where += ' AND g.sport = ?'; params.push(sport) }
 
   const ORDER_MAP = {
     time: 'g.game_time ASC, g.id',
@@ -1488,12 +1499,15 @@ app.get('/api/dashboard/today', (req, res) => {
   `).all(...params)
 
   res.json(games.map(g => ({
-    id: g.id, league: g.league,
+    id: g.id, sport: g.sport, league: g.league,
     home_team: g.home_team, away_team: g.away_team,
-    game_time: g.game_time, status: g.status,
+    home_logo: g.home_logo, away_logo: g.away_logo,
+    game_time: g.game_time, game_date: g.game_date, status: g.status,
     home_score: g.home_score, away_score: g.away_score,
     home_odds: g.home_odds, away_odds: g.away_odds,
     home_pitcher: g.home_pitcher, away_pitcher: g.away_pitcher,
+    period: g.period, clock: g.clock,
+    live_data: g.live_data ? JSON.parse(g.live_data) : null,
     prediction: g.home_win_probability != null ? {
       home_win_probability: g.home_win_probability,
       away_win_probability: g.away_win_probability,
@@ -1641,13 +1655,15 @@ app.get('/api/dashboard/live', (req, res) => {
   `).all(today)
 
   res.json(games.map(g => ({
-    id: g.id, league: g.league,
+    id: g.id, sport: g.sport, league: g.league,
     home_team: g.home_team, away_team: g.away_team,
+    home_logo: g.home_logo, away_logo: g.away_logo,
     game_time: g.game_time, game_date: g.game_date, status: g.status,
     home_score: g.home_score, away_score: g.away_score,
     current_inning: g.current_inning,
     inning_half: g.inning_half,
     outs: g.outs,
+    period: g.period, clock: g.clock,
     live_data: g.live_data ? JSON.parse(g.live_data) : null,
     home_pitcher: g.home_pitcher, away_pitcher: g.away_pitcher,
     prediction: g.home_win_probability != null ? {
@@ -1762,6 +1778,132 @@ const SYNC_INTERVAL = process.env.SYNC_INTERVAL_MS
 
 let syncTimer = null
 
+// ── ESPN 멀티스포츠 동기화 ──────────────────────────────────
+const ESPN_LEAGUES = [
+  // 축구
+  { sport: 'soccer', espn: 'eng.1', league: 'EPL', name: '프리미어리그' },
+  { sport: 'soccer', espn: 'esp.1', league: 'LALIGA', name: '라리가' },
+  { sport: 'soccer', espn: 'ger.1', league: 'BUNDESLIGA', name: '분데스리가' },
+  { sport: 'soccer', espn: 'ita.1', league: 'SERIE_A', name: '세리에A' },
+  { sport: 'soccer', espn: 'fra.1', league: 'LIGUE1', name: '리그1' },
+  { sport: 'soccer', espn: 'uefa.champions', league: 'UCL', name: '챔피언스리그' },
+  { sport: 'soccer', espn: 'kor.1', league: 'K_LEAGUE', name: 'K리그' },
+  { sport: 'soccer', espn: 'jpn.1', league: 'J_LEAGUE', name: 'J리그' },
+  // 농구
+  { sport: 'basketball', espn: 'nba', league: 'NBA', name: 'NBA', espnSport: 'basketball' },
+  // 배구
+  { sport: 'volleyball', espn: 'fivb.vnl', league: 'VNL', name: '네이션스리그', espnSport: 'volleyball' },
+]
+
+async function syncESPNSports() {
+  const insertGame = db.prepare(`INSERT OR IGNORE INTO games
+    (external_id, sport, league, home_team, away_team, home_logo, away_logo, game_date, game_time, home_score, away_score, status, period, clock, live_data)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+  const updateGame = db.prepare(`UPDATE games SET
+    home_score=?, away_score=?, status=?, period=?, clock=?, live_data=?, home_logo=?, away_logo=?
+    WHERE external_id=?`)
+
+  for (const lg of ESPN_LEAGUES) {
+    try {
+      const espnSport = lg.espnSport || 'soccer'
+      const url = `https://site.api.espn.com/apis/site/v2/sports/${espnSport}/${lg.espn}/scoreboard`
+      const data = await fetchJSON(url)
+      if (!data?.events) continue
+
+      let count = 0
+      for (const ev of data.events) {
+        const comp = ev.competitions?.[0]
+        if (!comp) continue
+
+        const homeTeam = comp.competitors?.find(c => c.homeAway === 'home')
+        const awayTeam = comp.competitors?.find(c => c.homeAway === 'away')
+        if (!homeTeam || !awayTeam) continue
+
+        const externalId = `espn_${lg.league}_${ev.id}`
+        const gameDate = ev.date ? new Date(ev.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+        const gameTime = ev.date ? new Date(ev.date).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Seoul' }) : null
+
+        const statusType = ev.status?.type?.name // STATUS_SCHEDULED, STATUS_IN_PROGRESS, STATUS_FINAL, STATUS_HALFTIME
+        let status = 'scheduled'
+        if (statusType === 'STATUS_FINAL' || statusType === 'STATUS_FULL_TIME') status = 'final'
+        else if (statusType === 'STATUS_IN_PROGRESS' || statusType === 'STATUS_HALFTIME' || statusType === 'STATUS_FIRST_HALF' || statusType === 'STATUS_SECOND_HALF') status = 'live'
+
+        const homeScore = parseInt(homeTeam.score) || null
+        const awayScore = parseInt(awayTeam.score) || null
+        const homeName = homeTeam.team?.displayName || homeTeam.team?.name || ''
+        const awayName = awayTeam.team?.displayName || awayTeam.team?.name || ''
+        const homeLogo = homeTeam.team?.logo || null
+        const awayLogo = awayTeam.team?.logo || null
+
+        // 라이브 데이터
+        const period = ev.status?.period ? `${ev.status.period}` : null
+        const clock = ev.status?.displayClock || null
+        const liveData = {
+          statusDetail: ev.status?.type?.shortDetail || '',
+          period: ev.status?.period,
+          clock: ev.status?.displayClock,
+          homeSets: homeTeam.linescores?.map(l => l.value) || [],
+          awaySets: awayTeam.linescores?.map(l => l.value) || [],
+          homeRecord: homeTeam.records?.[0]?.summary || '',
+          awayRecord: awayTeam.records?.[0]?.summary || '',
+        }
+
+        const existing = db.prepare('SELECT id FROM games WHERE external_id = ?').get(externalId)
+        if (existing) {
+          updateGame.run(homeScore, awayScore, status, period, clock, JSON.stringify(liveData), homeLogo, awayLogo, externalId)
+        } else {
+          insertGame.run(externalId, lg.sport, lg.league, homeName, awayName, homeLogo, awayLogo, gameDate, gameTime, homeScore, awayScore, status, period, clock, JSON.stringify(liveData))
+          count++
+        }
+      }
+      if (count > 0) console.log(`  [ESPN] ${lg.name} (${lg.league}): ${count}경기 추가`)
+    } catch (e) {
+      console.error(`  [ESPN] ${lg.league} 오류:`, e.message)
+    }
+  }
+}
+
+// ESPN 라이브 스코어 빠른 동기화
+async function syncESPNLive() {
+  const liveLeagues = db.prepare("SELECT DISTINCT league, sport FROM games WHERE status = 'live' AND sport != 'baseball'").all()
+  if (liveLeagues.length === 0) return
+
+  for (const { league, sport } of liveLeagues) {
+    const lgConfig = ESPN_LEAGUES.find(l => l.league === league)
+    if (!lgConfig) continue
+    try {
+      const espnSport = lgConfig.espnSport || 'soccer'
+      const url = `https://site.api.espn.com/apis/site/v2/sports/${espnSport}/${lgConfig.espn}/scoreboard`
+      const data = await fetchJSON(url)
+      if (!data?.events) continue
+
+      for (const ev of data.events) {
+        const comp = ev.competitions?.[0]
+        if (!comp) continue
+        const homeTeam = comp.competitors?.find(c => c.homeAway === 'home')
+        const awayTeam = comp.competitors?.find(c => c.homeAway === 'away')
+        if (!homeTeam || !awayTeam) continue
+
+        const statusType = ev.status?.type?.name
+        let status = 'scheduled'
+        if (statusType === 'STATUS_FINAL' || statusType === 'STATUS_FULL_TIME') status = 'final'
+        else if (['STATUS_IN_PROGRESS', 'STATUS_HALFTIME', 'STATUS_FIRST_HALF', 'STATUS_SECOND_HALF'].includes(statusType)) status = 'live'
+
+        const liveData = {
+          statusDetail: ev.status?.type?.shortDetail || '',
+          period: ev.status?.period,
+          clock: ev.status?.displayClock,
+          homeSets: homeTeam.linescores?.map(l => l.value) || [],
+          awaySets: awayTeam.linescores?.map(l => l.value) || [],
+        }
+
+        db.prepare('UPDATE games SET home_score=?, away_score=?, status=?, period=?, clock=?, live_data=? WHERE external_id=?')
+          .run(parseInt(homeTeam.score) || null, parseInt(awayTeam.score) || null, status, ev.status?.period?.toString() || null, ev.status?.displayClock || null, JSON.stringify(liveData), `espn_${league}_${ev.id}`)
+      }
+    } catch {}
+  }
+}
+
 async function syncAllData() {
   const start = Date.now()
   console.log(`[sync] 데이터 동기화 시작 (${new Date().toISOString()})`)
@@ -1769,6 +1911,7 @@ async function syncAllData() {
     await syncKBOData()
     await syncNPBData()
     await syncMLBData()
+    await syncESPNSports()
     console.log(`[sync] 완료 (${Date.now() - start}ms)`)
   } catch (err) {
     console.error('[sync] 동기화 실패:', err.message)
@@ -1808,7 +1951,8 @@ async function start() {
 
   // 라이브 스코어 빠른 동기화 (2분마다)
   setInterval(syncLiveScores, 2 * 60 * 1000)
-  console.log(`[live] 라이브 스코어: 2분마다 업데이트`)
+  setInterval(syncESPNLive, 2 * 60 * 1000)
+  console.log(`[live] 라이브 스코어: 2분마다 업데이트 (야구+축구+농구+배구)`)
 
   // SPA fallback — /api 이외 모든 요청은 index.html로
   const fs = await import('fs')

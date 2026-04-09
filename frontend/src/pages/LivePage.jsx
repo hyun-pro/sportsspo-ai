@@ -1,11 +1,30 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { getDashboardLive, getDashboardToday, getDashboardRecentResults } from '../services/api'
+import { getDashboardLive, getDashboardToday } from '../services/api'
+
+const LEAGUE_LABELS = {
+  '': '전체', KBO: 'KBO', MLB: 'MLB', NPB: 'NPB',
+  EPL: 'EPL', LALIGA: '라리가', BUNDESLIGA: '분데스', SERIE_A: '세리에A',
+  UCL: 'UCL', K_LEAGUE: 'K리그', J_LEAGUE: 'J리그',
+  NBA: 'NBA', VNL: '배구',
+}
 import { TeamLogo } from '../components/TeamBadge'
 import LeagueBadge from '../components/LeagueBadge'
 import ConfidenceBadge from '../components/ConfidenceBadge'
 import Scoreboard from '../components/Scoreboard'
 import { getShortName, getTeamCode } from '../utils/teamNames'
+
+// ESPN 로고 또는 기존 팀 로고
+function GameTeamLogo({ game, side, size = 'md' }) {
+  const logo = side === 'home' ? game.home_logo : game.away_logo
+  const team = side === 'home' ? game.home_team : game.away_team
+  const sizes = { sm: 'w-5 h-5', md: 'w-6 h-6', lg: 'w-10 h-10' }
+
+  if (logo) {
+    return <img src={logo} alt={team} className={`${sizes[size]} object-contain`} loading="lazy" />
+  }
+  return <TeamLogo team={team} size={size} />
+}
 
 export default function LivePage() {
   const [liveGames, setLiveGames] = useState([])
@@ -61,22 +80,22 @@ export default function LivePage() {
         <p className="text-gray-400 text-xs sm:text-sm mt-0.5">오늘의 경기 · 실시간 스코어 · 경기 결과</p>
       </div>
 
-      {/* 리그 필터 */}
-      <div className="flex gap-1.5">
-        {['', 'KBO', 'MLB', 'NPB'].map(l => (
+      {/* 스포츠 + 리그 필터 */}
+      <div className="flex gap-1 flex-wrap">
+        {['', 'KBO', 'MLB', 'NPB', 'EPL', 'LALIGA', 'BUNDESLIGA', 'SERIE_A', 'UCL', 'K_LEAGUE', 'J_LEAGUE', 'NBA', 'VNL'].map(l => (
           <button
             key={l}
             onClick={() => setFilter(l)}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${
+            className={`px-2 py-1 text-[10px] font-bold rounded-lg transition-colors ${
               filter === l
                 ? 'bg-accent-blue text-white'
-                : 'bg-dark-700 text-gray-400 hover:text-white'
+                : 'bg-dark-700 text-gray-500 hover:text-white'
             }`}
           >
-            {l || '전체'}
+            {LEAGUE_LABELS[l] || '전체'}
           </button>
         ))}
-        <span className="ml-auto text-[10px] text-gray-600 self-center">15초 자동갱신</span>
+        <span className="ml-auto text-[10px] text-gray-600 self-center shrink-0">15초 자동갱신</span>
       </div>
 
       {/* ── 실시간 진행 중 ── */}
@@ -154,9 +173,23 @@ function LiveGameRow({ game, isExpanded, onToggle }) {
   const outs = game.outs ?? ld?.outs ?? 0
   const runners = ld?.runners || {}
 
-  const inningText = currentInning
-    ? `${inningHalf === 'Top' ? '▲' : '▼'}${currentInning}회`
-    : ''
+  // 스포츠별 상태 텍스트
+  const statusText = (() => {
+    if (game.sport === 'soccer') {
+      const ld = game.live_data
+      return ld?.statusDetail || (game.period ? `${game.period === '1' ? '전반' : '후반'} ${game.clock || ''}` : 'LIVE')
+    }
+    if (game.sport === 'basketball') {
+      return game.period ? `${game.period}Q ${game.clock || ''}` : 'LIVE'
+    }
+    if (game.sport === 'volleyball') {
+      const sets = game.live_data
+      return sets?.statusDetail || `세트 ${game.period || ''}`
+    }
+    // baseball
+    if (currentInning) return `${inningHalf === 'Top' ? '▲' : '▼'}${currentInning}회`
+    return 'LIVE'
+  })()
 
   return (
     <div
@@ -166,22 +199,23 @@ function LiveGameRow({ game, isExpanded, onToggle }) {
       }`}
     >
       <div className="flex items-center gap-3">
-        {/* 리그 + 이닝 */}
+        {/* 리그 + 상태 */}
         <div className="w-16 sm:w-20 shrink-0">
-          <LeagueBadge league={game.league} />
-          <div className="text-[10px] font-bold text-accent-red mt-0.5 animate-pulse">
-            {inningText || 'LIVE'}
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-dark-600 text-gray-300">
+            {LEAGUE_LABELS[game.league] || game.league}
+          </span>
+          <div className="text-[10px] font-bold text-accent-red mt-0.5 animate-pulse truncate">
+            {statusText}
           </div>
         </div>
 
         {/* 원정팀 */}
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          <TeamLogo team={game.away_team} size="md" />
+          <GameTeamLogo game={game} side="away" size="md" />
           <div className="min-w-0">
-            <div className={`text-sm font-bold truncate ${inningHalf === 'Top' ? 'text-white' : 'text-gray-400'}`}>
+            <div className="text-sm font-bold truncate text-gray-300">
               {getShortName(game.away_team)}
             </div>
-            <div className="text-[9px] text-gray-600">{getTeamCode(game.away_team)}</div>
           </div>
         </div>
 
@@ -204,7 +238,7 @@ function LiveGameRow({ game, isExpanded, onToggle }) {
             </div>
             <div className="text-[9px] text-gray-600">{getTeamCode(game.home_team)}</div>
           </div>
-          <TeamLogo team={game.home_team} size="md" />
+          <GameTeamLogo game={game} side="home" size="md" />
         </div>
 
         {/* 아웃 + 다이아몬드 */}
@@ -249,7 +283,7 @@ function ScheduledGameRow({ game }) {
         </div>
 
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          <TeamLogo team={game.away_team} size="sm" />
+          <GameTeamLogo game={game} side="away" size="sm" />
           <span className="text-xs font-bold text-gray-300 truncate">{getShortName(game.away_team)}</span>
         </div>
 
@@ -257,7 +291,7 @@ function ScheduledGameRow({ game }) {
 
         <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
           <span className="text-xs font-bold text-gray-300 truncate">{getShortName(game.home_team)}</span>
-          <TeamLogo team={game.home_team} size="sm" />
+          <GameTeamLogo game={game} side="home" size="sm" />
         </div>
 
         {pred && (
@@ -308,7 +342,7 @@ function FinishedGameRow({ game }) {
               {/* 원정팀 */}
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <div className="relative">
-                  <TeamLogo team={game.away_team} size="lg" />
+                  <GameTeamLogo game={game} side="away" size="lg" />
                   {!homeWin && (
                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent-green rounded-full flex items-center justify-center">
                       <span className="text-[7px] font-black text-white">W</span>
@@ -346,7 +380,7 @@ function FinishedGameRow({ game }) {
                   <div className="text-[9px] text-gray-600">{getTeamCode(game.home_team)}</div>
                 </div>
                 <div className="relative">
-                  <TeamLogo team={game.home_team} size="lg" />
+                  <GameTeamLogo game={game} side="home" size="lg" />
                   {homeWin && (
                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent-green rounded-full flex items-center justify-center">
                       <span className="text-[7px] font-black text-white">W</span>
