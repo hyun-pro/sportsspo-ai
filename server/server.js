@@ -561,7 +561,10 @@ const MLB_API = 'https://statsapi.mlb.com/api/v1'
 
 async function fetchJSON(url) {
   try {
-    const res = await fetch(url)
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 15000)
+    const res = await fetch(url, { signal: controller.signal })
+    clearTimeout(timeout)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return await res.json()
   } catch (e) {
@@ -569,6 +572,10 @@ async function fetchJSON(url) {
     return null
   }
 }
+
+// 전역 에러 핸들러 (서버 크래시 방지)
+process.on('uncaughtException', (err) => { console.error('[CRASH 방지] uncaughtException:', err.message) })
+process.on('unhandledRejection', (err) => { console.error('[CRASH 방지] unhandledRejection:', err?.message || err) })
 
 async function fetchMLBSchedule(startDate, endDate) {
   console.log(`  MLB 일정 조회: ${startDate} ~ ${endDate}`)
