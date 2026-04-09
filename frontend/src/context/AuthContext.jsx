@@ -29,10 +29,11 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
-  const isPremium = user?.subscription_status === 'active' || user?.is_admin
+  const isPremium = user?.subscription_status === 'active' || user?.plan === 'pro' || user?.plan === 'premium' || user?.is_admin
+  const planLabel = user?.plan === 'premium' ? 'PREMIUM' : user?.plan === 'pro' ? 'PRO' : user?.is_admin ? 'ADMIN' : null
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginUser, logout, isPremium }}>
+    <AuthContext.Provider value={{ user, loading, loginUser, logout, isPremium, planLabel }}>
       {children}
     </AuthContext.Provider>
   )

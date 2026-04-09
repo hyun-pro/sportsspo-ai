@@ -32,27 +32,26 @@ const NAV_SUB = [
 ]
 
 export default function Layout({ children }) {
-  const { user, isPremium, logout } = useAuth()
+  const { user, isPremium, planLabel, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
 
   const [unreadNotifs, setUnreadNotifs] = useState(0)
   const [newAnnouncements, setNewAnnouncements] = useState(0)
 
-  // 알림 + 공지 카운트 가져오기
+  // 알림 + 공지 카운트 (최초 1회 + 60초마다)
   useEffect(() => {
-    if (user) {
-      getNotifications().then(res => setUnreadNotifs(res.data.unread || 0)).catch(() => {})
+    const fetchCounts = () => {
+      if (user) getNotifications().then(res => setUnreadNotifs(res.data.unread || 0)).catch(() => {})
+      getAnnouncements().then(res => {
+        const recent = (res.data || []).filter(a => (Date.now() - new Date(a.created_at).getTime()) / 86400000 < 3)
+        setNewAnnouncements(recent.length)
+      }).catch(() => {})
     }
-    getAnnouncements().then(res => {
-      // 최근 3일 이내 공지 개수
-      const recent = (res.data || []).filter(a => {
-        const diff = (Date.now() - new Date(a.created_at).getTime()) / 86400000
-        return diff < 3
-      })
-      setNewAnnouncements(recent.length)
-    }).catch(() => {})
-  }, [user, location.pathname])
+    fetchCounts()
+    const timer = setInterval(fetchCounts, 60000)
+    return () => clearInterval(timer)
+  }, [user])
 
   const handleLogout = () => {
     logout()
@@ -120,8 +119,12 @@ export default function Layout({ children }) {
         <div className="border-t border-dark-700">
           {/* 비구독자: 요금제 배너, 구독자: PRO 뱃지 */}
           {isPremium ? (
-            <div className="mx-3 mt-3 mb-2 px-3 py-2 bg-accent-green/10 rounded-xl border border-accent-green/20">
-              <span className="text-xs font-bold text-accent-green">PRO 구독중</span>
+            <div className={`mx-3 mt-3 mb-2 px-3 py-2 rounded-xl border ${
+              planLabel === 'PREMIUM' ? 'bg-amber-500/10 border-amber-500/20' : 'bg-accent-green/10 border-accent-green/20'
+            }`}>
+              <span className={`text-xs font-bold ${planLabel === 'PREMIUM' ? 'text-amber-400' : 'text-accent-green'}`}>
+                {planLabel || 'PRO'} 구독중
+              </span>
             </div>
           ) : (
             <div className="mt-3"><PricingBanner /></div>
@@ -175,8 +178,10 @@ export default function Layout({ children }) {
                 )}
               </Link>
             )}
-            {isPremium && (
-              <span className="text-[10px] font-bold text-accent-green bg-accent-green/10 px-2 py-0.5 rounded-full">PRO</span>
+            {isPremium && planLabel && (
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                planLabel === 'PREMIUM' ? 'text-amber-400 bg-amber-500/10' : 'text-accent-green bg-accent-green/10'
+              }`}>{planLabel}</span>
             )}
             {!user ? (
               <Link to="/login" className="text-xs text-gray-400 hover:text-white">로그인</Link>
