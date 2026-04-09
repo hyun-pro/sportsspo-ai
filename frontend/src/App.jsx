@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
-import Navbar from './components/Navbar'
+import Layout from './components/Layout'
 import Home from './pages/Home'
 import GameDetail from './pages/GameDetail'
 import Login from './pages/Login'
@@ -27,25 +27,22 @@ function Spinner() {
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-dark-900">
-      <Navbar />
-      <main className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-3 sm:py-6">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/live" element={<LivePage />} />
-          <Route path="/games" element={<Home />} />
-          <Route path="/game/:id" element={<GameDetail />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/subscription" element={<Subscription />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoute><UserDashboard /></ProtectedRoute>
-          } />
-          <Route path="/admin" element={
-            <ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>
-          } />
-        </Routes>
-      </main>
-    </div>
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/live" element={<LivePage />} />
+        <Route path="/games" element={<Home />} />
+        <Route path="/game/:id" element={<GameDetail />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/subscription" element={<Subscription />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute><UserDashboard /></ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>
+        } />
+      </Routes>
+    </Layout>
   )
 }
