@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const NAV_ITEMS = [
@@ -41,8 +41,14 @@ const NAV_ITEMS = [
 ]
 
 export default function Layout({ children }) {
-  const { user, isPremium } = useAuth()
+  const { user, isPremium, logout } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
 
   const visibleItems = NAV_ITEMS.filter(item => !item.auth || user)
 
@@ -124,8 +130,17 @@ export default function Layout({ children }) {
               </Link>
             </div>
           ) : (
-            <div className="px-3 py-2">
+            <div className="px-3 py-2 space-y-2">
               <div className="text-xs text-gray-500 truncate">{user.email}</div>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-accent-red hover:bg-accent-red/10 rounded-xl transition-all"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+                  <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                로그아웃
+              </button>
             </div>
           )}
         </div>
@@ -147,9 +162,14 @@ export default function Layout({ children }) {
             {!user ? (
               <Link to="/login" className="text-xs text-gray-400 hover:text-white">로그인</Link>
             ) : (
-              <Link to="/dashboard" className="w-7 h-7 bg-dark-600 rounded-full flex items-center justify-center">
-                <span className="text-[10px] font-bold text-gray-300">{user.email?.[0]?.toUpperCase()}</span>
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link to="/dashboard" className="w-7 h-7 bg-dark-600 rounded-full flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-gray-300">{user.email?.[0]?.toUpperCase()}</span>
+                </Link>
+                <button onClick={handleLogout} className="text-[10px] text-gray-500 hover:text-accent-red">
+                  로그아웃
+                </button>
+              </div>
             )}
           </div>
         </div>

@@ -43,13 +43,13 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">이메일</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">아이디</label>
             <input
-              type="email"
+              type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input-field"
-              placeholder="example@email.com"
+              placeholder="아이디 또는 이메일"
               required
             />
           </div>
@@ -79,10 +79,8 @@ export default function Login() {
         </p>
 
         <div className="mt-6 p-3 bg-dark-700 rounded-lg text-xs text-gray-400">
-          <div className="font-semibold text-gray-300 mb-1">테스트 계정:</div>
-          <div>관리자: admin@ballpredict.com / admin123</div>
-          <div>프리미엄: demo@ballpredict.com / demo123</div>
-          <div>무료: free@ballpredict.com / free123</div>
+          <div className="font-semibold text-gray-300 mb-1">테스트 계정</div>
+          <div>ID: <span className="text-gray-200">0000</span> / PW: <span className="text-gray-200">0000</span> (PRO)</div>
         </div>
       </div>
     </div>
