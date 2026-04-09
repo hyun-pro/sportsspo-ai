@@ -20,7 +20,7 @@ const ALLOWED_ORIGINS = process.env.CORS_ORIGINS
   : ['http://localhost:5173', 'http://localhost:3000']
 
 app.use(cors({
-  origin: NODE_ENV === 'production' ? ALLOWED_ORIGINS : true,
+  origin: true, // 모든 origin 허용 (Vercel 프리뷰 등)
   credentials: true,
 }))
 app.use(express.json())
