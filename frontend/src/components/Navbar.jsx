@@ -17,7 +17,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 shrink-0">
+          <a href="/" className="flex items-center gap-2 shrink-0">
             <img src="/logo.svg" alt="Logo" className="w-8 h-8" />
             <div className="flex items-baseline gap-1">
               <span className="text-lg font-black bg-gradient-to-r from-accent-blue to-accent-purple bg-clip-text text-transparent">
@@ -25,7 +25,7 @@ export default function Navbar() {
               </span>
               <span className="text-xs font-bold text-accent-blue">AI</span>
             </div>
-          </Link>
+          </a>
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-5">

@@ -273,66 +273,110 @@ function ScheduledGameRow({ game }) {
   )
 }
 
-// ── 종료 경기 행 ──
+// ── 종료 경기 카드 (고퀄리티) ──
 function FinishedGameRow({ game }) {
   const homeWin = (game.home_score ?? 0) > (game.away_score ?? 0)
   const pred = game.prediction
   const isCorrect = pred
     ? (pred.recommended_pick === 'home' && homeWin) || (pred.recommended_pick === 'away' && !homeWin)
     : null
+  const totalScore = (game.home_score ?? 0) + (game.away_score ?? 0)
 
   return (
-    <Link to={`/game/${game.id}`} className="card p-3 block hover:bg-dark-700/40 transition-all">
-      <div className="flex items-center gap-3">
-        <div className="w-16 sm:w-20 shrink-0">
-          <LeagueBadge league={game.league} />
-          <div className="text-[10px] text-gray-500 mt-0.5">종료</div>
-        </div>
+    <Link
+      to={`/game/${game.id}`}
+      className="block group"
+    >
+      <div className="card p-0 overflow-hidden transition-all duration-200 hover:translate-y-[-2px] hover:shadow-lg hover:shadow-dark-900/50 hover:border-dark-500">
+        <div className="flex items-stretch">
+          {/* 왼쪽 리그 + 시간 바 */}
+          <div className="w-14 sm:w-16 bg-dark-700/50 flex flex-col items-center justify-center py-3 border-r border-dark-600 shrink-0">
+            <LeagueBadge league={game.league} />
+            <div className="text-[9px] text-gray-500 mt-1">{game.game_time || '종료'}</div>
+            {isCorrect !== null && (
+              <div className={`mt-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                isCorrect ? 'bg-accent-green/15 text-accent-green' : 'bg-accent-red/15 text-accent-red'
+              }`}>
+                {isCorrect ? 'HIT' : 'MISS'}
+              </div>
+            )}
+          </div>
 
-        {/* 원정 */}
-        <div className={`flex items-center gap-1.5 flex-1 min-w-0 ${!homeWin ? '' : 'opacity-50'}`}>
-          <TeamLogo team={game.away_team} size="md" />
-          <span className={`text-sm font-bold truncate ${!homeWin ? 'text-white' : 'text-gray-500'}`}>
-            {getShortName(game.away_team)}
-          </span>
-          {!homeWin && <span className="text-[9px] font-bold text-accent-green">W</span>}
-        </div>
+          {/* 메인 컨텐츠 */}
+          <div className="flex-1 p-3 sm:p-4">
+            <div className="flex items-center justify-between">
+              {/* 원정팀 */}
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="relative">
+                  <TeamLogo team={game.away_team} size="lg" />
+                  {!homeWin && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent-green rounded-full flex items-center justify-center">
+                      <span className="text-[7px] font-black text-white">W</span>
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className={`text-sm sm:text-base font-bold truncate ${!homeWin ? 'text-white' : 'text-gray-500'}`}>
+                    {getShortName(game.away_team)}
+                  </div>
+                  <div className="text-[9px] text-gray-600">{getTeamCode(game.away_team)}</div>
+                </div>
+              </div>
 
-        {/* 스코어 */}
-        <div className="flex items-center gap-1 shrink-0">
-          <span className={`text-xl font-black tabular-nums w-6 text-center ${!homeWin ? 'text-white' : 'text-gray-500'}`}>
-            {game.away_score ?? 0}
-          </span>
-          <span className="text-gray-600 text-xs">-</span>
-          <span className={`text-xl font-black tabular-nums w-6 text-center ${homeWin ? 'text-white' : 'text-gray-500'}`}>
-            {game.home_score ?? 0}
-          </span>
-        </div>
+              {/* 스코어 */}
+              <div className="flex items-center gap-0.5 sm:gap-1 mx-3 shrink-0">
+                <span className={`text-2xl sm:text-3xl font-black tabular-nums ${!homeWin ? 'text-white' : 'text-gray-600'}`}>
+                  {game.away_score ?? 0}
+                </span>
+                <div className="flex flex-col items-center mx-1">
+                  <span className="text-[8px] text-gray-600 font-bold">FINAL</span>
+                  <span className="text-gray-700 text-lg">:</span>
+                </div>
+                <span className={`text-2xl sm:text-3xl font-black tabular-nums ${homeWin ? 'text-white' : 'text-gray-600'}`}>
+                  {game.home_score ?? 0}
+                </span>
+              </div>
 
-        {/* 홈 */}
-        <div className={`flex items-center gap-1.5 flex-1 min-w-0 justify-end ${homeWin ? '' : 'opacity-50'}`}>
-          {homeWin && <span className="text-[9px] font-bold text-accent-green">W</span>}
-          <span className={`text-sm font-bold truncate ${homeWin ? 'text-white' : 'text-gray-500'}`}>
-            {getShortName(game.home_team)}
-          </span>
-          <TeamLogo team={game.home_team} size="md" />
-        </div>
+              {/* 홈팀 */}
+              <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                <div className="min-w-0 text-right">
+                  <div className={`text-sm sm:text-base font-bold truncate ${homeWin ? 'text-white' : 'text-gray-500'}`}>
+                    {getShortName(game.home_team)}
+                  </div>
+                  <div className="text-[9px] text-gray-600">{getTeamCode(game.home_team)}</div>
+                </div>
+                <div className="relative">
+                  <TeamLogo team={game.home_team} size="lg" />
+                  {homeWin && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent-green rounded-full flex items-center justify-center">
+                      <span className="text-[7px] font-black text-white">W</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
 
-        {/* 예측 결과 */}
-        <div className="shrink-0 w-12 text-center">
-          {isCorrect !== null && (
-            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-              isCorrect ? 'bg-accent-green/15 text-accent-green' : 'bg-accent-red/15 text-accent-red'
-            }`}>
-              {isCorrect ? 'HIT' : 'MISS'}
-            </span>
-          )}
-        </div>
+            {/* 하단 정보 바 */}
+            {pred && (
+              <div className="flex items-center justify-between mt-2 pt-2 border-t border-dark-700/50">
+                <div className="text-[10px] text-gray-500">
+                  AI 예측: <span className={`font-bold ${pred.recommended_pick === 'home' ? 'text-accent-blue' : 'text-accent-purple'}`}>
+                    {pred.recommended_pick === 'home' ? getShortName(game.home_team) : getShortName(game.away_team)}
+                    {' '}{Math.max(pred.home_win_probability, pred.away_win_probability)}%
+                  </span>
+                </div>
+                <ConfidenceBadge score={pred.confidence_score} size="sm" />
+              </div>
+            )}
+          </div>
 
-        {/* 화살표 */}
-        <svg className="w-4 h-4 text-gray-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
+          {/* 오른쪽 화살표 */}
+          <div className="w-8 sm:w-10 flex items-center justify-center bg-dark-700/30 border-l border-dark-600 group-hover:bg-dark-600/50 transition-colors shrink-0">
+            <svg className="w-4 h-4 text-gray-600 group-hover:text-gray-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
       </div>
     </Link>
   )
