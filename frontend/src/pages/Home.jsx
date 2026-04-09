@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { getGames } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import LeagueFilter from '../components/LeagueFilter'
 import GameRow from '../components/GameRow'
 
 export default function Home() {
+  const [searchParams] = useSearchParams()
+  const sportParam = searchParams.get('sport')
   const [games, setGames] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -20,6 +23,7 @@ export default function Home() {
     if (league) params.league = league
     if (dateFilter) params.game_date = dateFilter
     if (minConfidence) params.min_confidence = parseInt(minConfidence)
+    if (sportParam) params.sport = sportParam
 
     getGames(params)
       .then((res) => {
@@ -28,7 +32,7 @@ export default function Home() {
       })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [league, dateFilter, minConfidence, page])
+  }, [league, dateFilter, minConfidence, page, sportParam])
 
   const totalPages = Math.ceil(total / 25)
 

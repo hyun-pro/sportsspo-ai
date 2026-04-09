@@ -7,8 +7,13 @@ const I = (d) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 const NAV_MAIN = [
   { path: '/live', label: '실시간', live: true, icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><circle cx="12" cy="12" r="10" /><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none" /></svg> },
   { path: '/', label: '대시보드', icon: I('M4 6h16M4 10h16M4 14h16M4 18h16') },
-  { path: '/games', label: '경기예측', icon: I('M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6m6 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0h6m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14') },
   { path: '/community', label: '커뮤니티', icon: I('M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-1m0-3V6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2h-3l-4 4V12H9a2 2 0 01-2-2z') },
+]
+
+const NAV_SPORTS = [
+  { path: '/games?sport=baseball', label: '야구', emoji: '⚾', icon: I('M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6m6 0V9a2 2 0 012-2h2a2 2 0 012 2v10') },
+  { path: '/games?sport=soccer', label: '축구', emoji: '⚽', icon: I('M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6m6 0V9a2 2 0 012-2h2a2 2 0 012 2v10') },
+  { path: '/games?sport=basketball', label: '농구', emoji: '🏀', icon: I('M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6m6 0V9a2 2 0 012-2h2a2 2 0 012 2v10') },
 ]
 
 const NAV_SUB = [
@@ -54,6 +59,21 @@ export default function Layout({ children }) {
           <div className="text-[9px] font-bold text-gray-600 uppercase tracking-wider px-3 mb-2">메인</div>
           <div className="space-y-0.5 mb-4">
             {mainItems.map(item => <SidebarLink key={item.path} item={item} location={location} />)}
+          </div>
+
+          <div className="text-[9px] font-bold text-gray-600 uppercase tracking-wider px-3 mb-2">경기예측</div>
+          <div className="space-y-0.5 mb-4">
+            {NAV_SPORTS.map(item => (
+              <Link key={item.path} to={item.path}
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  location.search.includes(item.label === '야구' ? 'baseball' : item.label === '축구' ? 'soccer' : 'basketball')
+                    ? 'bg-accent-blue/10 text-accent-blue'
+                    : 'text-gray-400 hover:text-white hover:bg-dark-700/50'
+                }`}>
+                <span className="text-base w-5 text-center">{item.emoji}</span>
+                {item.label}
+              </Link>
+            ))}
           </div>
 
           <div className="text-[9px] font-bold text-gray-600 uppercase tracking-wider px-3 mb-2">더보기</div>

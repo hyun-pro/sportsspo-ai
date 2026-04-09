@@ -1308,11 +1308,12 @@ app.get('/api/admin/stats', authMiddleware, (req, res) => {
 
 // ── Games Routes ────────────────────────────────────────────
 app.get('/api/games', optionalAuth, (req, res) => {
-  const { league, game_date, min_confidence, page = 1, per_page = 25 } = req.query
+  const { league, game_date, min_confidence, sport, page = 1, per_page = 25 } = req.query
   let where = [], params = []
   if (league) { where.push('g.league = ?'); params.push(league) }
   if (game_date) { where.push('g.game_date = ?'); params.push(game_date) }
   if (min_confidence) { where.push('p.confidence_score >= ?'); params.push(parseInt(min_confidence)) }
+  if (sport) { where.push('g.sport = ?'); params.push(sport) }
   const whereClause = where.length ? 'WHERE ' + where.join(' AND ') : ''
   const offset = (parseInt(page) - 1) * parseInt(per_page)
 

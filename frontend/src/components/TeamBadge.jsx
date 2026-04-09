@@ -98,11 +98,14 @@ function TeamLogo({ team, size = 'md' }) {
   }
 
   if (logoUrl && !imgError) {
+    // NPB gif 로고는 흰 배경 → mix-blend로 제거
+    const isNpb = !!NPB_LOGO_CODES[team]
     return (
       <img
         src={logoUrl}
         alt={team}
-        className={`${sizes[size]} object-contain flex-shrink-0`}
+        className={`${sizes[size]} object-contain flex-shrink-0 ${isNpb ? 'mix-blend-lighten' : ''}`}
+        style={isNpb ? { filter: 'brightness(1.1)' } : {}}
         onError={() => setImgError(true)}
         loading="lazy"
       />
