@@ -2151,7 +2151,15 @@ function cleanKBOTeamNames() {
 
 // ── 프론트엔드 정적 파일 서빙 ────────────────────────────────
 const clientBuildPath = join(__dirname, '..', 'frontend', 'dist')
-app.use(express.static(clientBuildPath))
+app.use(express.static(clientBuildPath, {
+  etag: false,
+  maxAge: 0,
+  setHeaders: (res, path) => {
+    if (path.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+    }
+  }
+}))
 
 // ── Health ──────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({
