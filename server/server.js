@@ -1267,7 +1267,65 @@ app.delete('/api/admin/announcements/:id', authMiddleware, (req, res) => {
   res.json({ ok: true })
 })
 
+// ── 배트맨 회차/배당 자동 수집 ────────────────────────────────
+async function syncBetmanData() {
+  try {
+    const resp = await fetch('https://www.betman.co.kr/buyPsblGame/inqCacheBuyAbleGameInfoList.do', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Referer': 'https://www.betman.co.kr/' },
+      body: JSON.stringify({ _sbmInfo: { debugMode: 'false' } }),
+    })
+    const data = await resp.json()
+    const allGames = [...(data.protoGames || []), ...(data.totoGames || [])]
+    console.log(`[betman] ${allGames.length}개 회차 확인`)
+
+    // 발매중인 게임의 상세 배당 가져오기
+    for (const game of allGames) {
+      if (!game.saleProgress) continue
+      try {
+        const detailResp = await fetch('https://www.betman.co.kr/buyPsblGame/gameInfoInq.do', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Referer': 'https://www.betman.co.kr/' },
+          body: JSON.stringify({ _sbmInfo: { debugMode: 'false' }, gmId: game.gmId, gmTs: String(game.gmTs) }),
+        })
+        const detail = await detailResp.json()
+        const schedules = detail.currentLottery?.scheduleList || []
+        const allots = detail.currentLottery?.protoAllots || []
+        if (schedules.length > 0 || allots.length > 0) {
+          console.log(`  [betman] ${game.gmId} ${game.gmTs}: ${schedules.length}경기 ${allots.length}배당`)
+        }
+      } catch {}
+    }
+  } catch (e) {
+    console.error('[betman] 동기화 실패:', e.message)
+  }
+}
+
 // ── 배트맨 데이터 프록시 ─────────────────────────────────────
+// 현재 발매중인 게임 목록
+app.get('/api/betman/active', async (req, res) => {
+  try {
+    const resp = await fetch('https://www.betman.co.kr/buyPsblGame/inqCacheBuyAbleGameInfoList.do', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Referer': 'https://www.betman.co.kr/' },
+      body: JSON.stringify({ _sbmInfo: { debugMode: 'false' } }),
+    })
+    const data = await resp.json()
+    const games = [...(data.protoGames || []), ...(data.totoGames || [])].map(g => ({
+      gmId: g.gmId,
+      gmTs: g.gmTs,
+      name: g.gameMaster?.gameName || g.gameName,
+      nickname: g.gameMaster?.gameNickName,
+      sport: g.gameMaster?.sportsItem?.sportsItemName,
+      saleEnd: g.saleEndDate,
+      selling: g.saleProgress,
+      status: g.mainStatusMessage,
+      totalSell: g.totalSellAmount,
+    }))
+    res.json(games)
+  } catch (e) { res.json([]) }
+})
+
 app.get('/api/betman/games', async (req, res) => {
   try {
     const gmId = req.query.gm_id || 'G102'
@@ -2193,6 +2251,7 @@ async function syncAllData() {
     await syncNPBData()
     await syncMLBData()
     await syncESPNSports()
+    await syncBetmanData()
     console.log(`[sync] 완료 (${Date.now() - start}ms)`)
   } catch (err) {
     console.error('[sync] 동기화 실패:', err.message)
