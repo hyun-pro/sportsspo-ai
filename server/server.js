@@ -2322,19 +2322,6 @@ async function start() {
   seedUsers()
   cleanKBOTeamNames()
 
-  // 초기 데이터 동기화
-  await syncAllData()
-  cleanKBOTeamNames() // 동기화 후에도 한번 더
-
-  // 주기적 동기화 스케줄
-  syncTimer = setInterval(syncAllData, SYNC_INTERVAL)
-  console.log(`[sync] 주기: ${SYNC_INTERVAL / 1000 / 60}분마다 자동 동기화`)
-
-  // 라이브 스코어 빠른 동기화 (2분마다)
-  setInterval(syncLiveScores, 30 * 1000)  // 30초
-  setInterval(syncESPNLive, 30 * 1000)    // 30초
-  console.log(`[live] 라이브 스코어: 30초마다 업데이트`)
-
   // SPA fallback — /api 이외 모든 요청은 index.html로
   const fs = await import('fs')
   const indexPath = join(clientBuildPath, 'index.html')
@@ -2343,10 +2330,22 @@ async function start() {
     console.log(`[static] 프론트엔드 서빙: ${clientBuildPath}`)
   }
 
+  // 포트 먼저 열기 (Render 타임아웃 방지)
   server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n  스포츠스포AI: http://0.0.0.0:${PORT}`)
     console.log(`  Environment: ${NODE_ENV}`)
     console.log(`  Health check: /api/health\n`)
+
+    // 서버 시작 후 백그라운드로 데이터 동기화
+    syncAllData().then(() => cleanKBOTeamNames()).catch(console.error)
+
+    // 주기적 동기화 스케줄
+    syncTimer = setInterval(syncAllData, SYNC_INTERVAL)
+    console.log(`[sync] 주기: ${SYNC_INTERVAL / 1000 / 60}분마다 자동 동기화`)
+
+    setInterval(syncLiveScores, 30 * 1000)
+    setInterval(syncESPNLive, 30 * 1000)
+    console.log(`[live] 라이브 스코어: 30초마다 업데이트`)
   })
 }
 
