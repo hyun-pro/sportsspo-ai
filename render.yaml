@@ -1,11 +1,10 @@
 services:
   - type: web
     name: sportsspo-ai
-    runtime: node
+    runtime: docker
     region: oregon
     plan: free
-    buildCommand: cd frontend && npm install && npm run build && cd ../server && npm install
-    startCommand: cd server && node server.js
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: NODE_ENV
         value: production
