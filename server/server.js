@@ -1270,10 +1270,16 @@ app.delete('/api/admin/announcements/:id', authMiddleware, (req, res) => {
 // ── 배트맨 데이터 프록시 ─────────────────────────────────────
 app.get('/api/betman/games', async (req, res) => {
   try {
+    const gmId = req.query.gm_id || 'G102'
     const response = await fetch('https://www.betman.co.kr/gameinfo/inqItrstGameList.do', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0' },
-      body: JSON.stringify({ _sbmInfo: { debugMode: 'false' }, GM_ID: req.query.gm_id || 'G102', GM_TS: req.query.gm_ts || '' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://www.betman.co.kr/',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({ _sbmInfo: { debugMode: 'false' }, GM_ID: gmId, GM_TS: req.query.gm_ts || '' }),
     })
     const data = await response.json()
     const games = (data.dl_itrstGameList || []).map(g => ({
@@ -1282,11 +1288,12 @@ app.get('/api/betman/games', async (req, res) => {
       date: g.MCH_DTM,
       round: g.GM_TS,
       gameId: g.GM_ID,
+      gameType: gmId,
       seq: g.GM_SEQ,
       league: g.GM_LEAG_CD,
       stadium: (g.STDM_NM || '').trim(),
+      gameName: (g.GM_NM || '').trim(),
     }))
-    // 최근 경기만 (향후 2주)
     res.json({ games: games.slice(0, 200), total: games.length })
   } catch (e) {
     res.json({ games: [], total: 0, error: e.message })

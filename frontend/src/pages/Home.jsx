@@ -63,23 +63,37 @@ export default function Home() {
         <p className="text-xs text-gray-500 mt-0.5">AI 분석 기반 승부 예측 · 선발투수 매치업 · 신뢰도 분석</p>
       </div>
 
+      {/* 요약 통계 (클릭 가능) */}
+      <div className="flex gap-2 flex-wrap">
+        <button onClick={() => { setMinConfidence(''); setPage(1) }}
+          className={`px-3 py-1.5 text-[10px] font-semibold rounded-lg border transition-colors ${
+            !minConfidence ? 'border-white/20 text-white bg-dark-700' : 'border-dark-600 text-gray-500 hover:text-white'
+          }`}>
+          전체 {total}
+        </button>
+        <button onClick={() => { setMinConfidence('70'); setPage(1) }}
+          className={`px-3 py-1.5 text-[10px] font-semibold rounded-lg border transition-colors ${
+            minConfidence === '70' ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10' : 'border-dark-600 text-gray-500 hover:text-emerald-400'
+          }`}>
+          강력추천 {games.filter(g => g.prediction?.confidence_score >= 70).length}
+        </button>
+        <button onClick={() => { setMinConfidence('50'); setPage(1) }}
+          className={`px-3 py-1.5 text-[10px] font-semibold rounded-lg border transition-colors ${
+            minConfidence === '50' ? 'border-amber-500/30 text-amber-400 bg-amber-500/10' : 'border-dark-600 text-gray-500 hover:text-amber-400'
+          }`}>
+          추천 50%+
+        </button>
+      </div>
+
       {/* 필터 */}
       <div className="flex gap-1.5 flex-wrap items-center">
         <input type="date" value={dateFilter}
           onChange={(e) => { setDateFilter(e.target.value); setPage(1) }}
           className="input-field w-auto text-xs py-1.5 px-2" />
-        <select value={minConfidence}
-          onChange={(e) => { setMinConfidence(e.target.value); setPage(1) }}
-          className="input-field w-auto text-xs py-1.5 px-2">
-          <option value="">신뢰도 전체</option>
-          <option value="70">70%+</option>
-          <option value="50">50%+</option>
-        </select>
         {(dateFilter || minConfidence) && (
           <button onClick={() => { setDateFilter(''); setMinConfidence(''); setPage(1) }}
             className="text-[10px] text-gray-500 hover:text-white">초기화</button>
         )}
-        <span className="text-[10px] text-gray-600 ml-auto">총 {total}경기</span>
       </div>
 
       {/* 경기 리스트 */}
