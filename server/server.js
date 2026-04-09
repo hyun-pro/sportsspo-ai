@@ -151,6 +151,15 @@ db.exec(`
     FOREIGN KEY (post_id) REFERENCES posts(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+  CREATE TABLE IF NOT EXISTS live_chats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    message TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (game_id) REFERENCES games(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
   CREATE TABLE IF NOT EXISTS support_tickets (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -1245,6 +1254,26 @@ app.delete('/api/admin/announcements/:id', authMiddleware, (req, res) => {
   if (!req.user.is_admin) return res.status(403).json({ detail: '관리자 전용' })
   db.prepare('DELETE FROM announcements WHERE id = ?').run(req.params.id)
   res.json({ ok: true })
+})
+
+// ── 실시간 채팅 ─────────────────────────────────────────────
+app.get('/api/games/:id/chat', (req, res) => {
+  const after = req.query.after || 0
+  const msgs = db.prepare(`
+    SELECT c.id, c.message, c.created_at, u.nickname, u.plan
+    FROM live_chats c JOIN users u ON u.id = c.user_id
+    WHERE c.game_id = ? AND c.id > ?
+    ORDER BY c.created_at DESC LIMIT 50
+  `).all(req.params.id, parseInt(after))
+  res.json(msgs.reverse())
+})
+
+app.post('/api/games/:id/chat', authMiddleware, (req, res) => {
+  const { message } = req.body
+  if (!message || message.trim().length === 0) return res.status(400).json({ detail: '메시지를 입력하세요' })
+  if (message.length > 200) return res.status(400).json({ detail: '200자 이내로 입력하세요' })
+  const result = db.prepare('INSERT INTO live_chats (game_id, user_id, message) VALUES (?,?,?)').run(req.params.id, req.user.id, message.trim())
+  res.status(201).json({ id: result.lastInsertRowid })
 })
 
 // ── 문자 중계 (MLB Play-by-Play) ────────────────────────────

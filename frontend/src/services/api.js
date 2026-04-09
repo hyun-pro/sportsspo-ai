@@ -35,6 +35,8 @@ export const getGames = (params) => api.get('/games', { params })
 export const getGameDetail = (id) => api.get(`/games/${id}`)
 export const searchGames = (params) => api.get('/games/search', { params })
 export const getPlayByPlay = (id) => api.get(`/games/${id}/playbyplay`)
+export const getChat = (id, after) => api.get(`/games/${id}/chat`, { params: { after } })
+export const sendChat = (id, message) => api.post(`/games/${id}/chat`, { message })
 
 // Stats
 export const getTeamStats = (params) => api.get('/stats/teams', { params })

@@ -83,8 +83,58 @@ export function displayTeamName(teamName) {
 }
 
 // 짧은 한글명만 (배지용)
+// ESPN 축구/농구 등은 매핑 없으면 영문 그대로 (짧게 처리)
 export function getShortName(teamName) {
-  return ALL_TEAMS[teamName]?.kr || teamName
+  if (!teamName) return ''
+  const mapped = ALL_TEAMS[teamName]?.kr
+  if (mapped) return mapped
+  // 긴 영문 이름 → 짧게 (예: "Manchester United" → "Man United", "Los Angeles Lakers" → "LA Lakers")
+  return teamName
+    .replace('Manchester', 'Man')
+    .replace('Wolverhampton Wanderers', 'Wolves')
+    .replace('Nottingham Forest', 'Forest')
+    .replace('Newcastle United', 'Newcastle')
+    .replace('Tottenham Hotspur', 'Tottenham')
+    .replace('West Ham United', 'West Ham')
+    .replace('Leicester City', 'Leicester')
+    .replace('Crystal Palace', 'C.Palace')
+    .replace('Brighton & Hove Albion', 'Brighton')
+    .replace('AFC Bournemouth', 'Bournemouth')
+    .replace('Ipswich Town', 'Ipswich')
+    .replace('Real Madrid CF', 'Real Madrid')
+    .replace('FC Barcelona', 'Barcelona')
+    .replace('Atletico Madrid', 'A.Madrid')
+    .replace('Athletic Bilbao', 'A.Bilbao')
+    .replace('Real Sociedad', 'R.Sociedad')
+    .replace('Real Betis', 'Betis')
+    .replace('Borussia Dortmund', 'Dortmund')
+    .replace('Bayern Munich', 'Bayern')
+    .replace('Bayer Leverkusen', 'Leverkusen')
+    .replace('RB Leipzig', 'Leipzig')
+    .replace('Eintracht Frankfurt', 'Frankfurt')
+    .replace('Inter Milan', 'Inter')
+    .replace('AC Milan', 'Milan')
+    .replace('Juventus FC', 'Juventus')
+    .replace('SSC Napoli', 'Napoli')
+    .replace('AS Roma', 'Roma')
+    .replace('Golden State Warriors', 'GSW')
+    .replace('Los Angeles Lakers', 'LA Lakers')
+    .replace('Los Angeles Clippers', 'LA Clippers')
+    .replace('Oklahoma City Thunder', 'OKC')
+    .replace('San Antonio Spurs', 'SA Spurs')
+    .replace('New York Knicks', 'NY Knicks')
+    .replace('Brooklyn Nets', 'Brooklyn')
+    .replace('Portland Trail Blazers', 'Portland')
+    .replace('Minnesota Timberwolves', 'Minnesota')
+    .replace('Sacramento Kings', 'Sacramento')
+    .replace('New Orleans Pelicans', 'New Orleans')
+    .replace('Washington Wizards', 'Washington')
+    .replace('Philadelphia 76ers', 'PHI 76ers')
+    .replace('Indiana Pacers', 'Indiana')
+    .replace('Milwaukee Bucks', 'Milwaukee')
+    .replace('Cleveland Cavaliers', 'Cleveland')
+    .replace('Memphis Grizzlies', 'Memphis')
+    .replace('Charlotte Hornets', 'Charlotte')
 }
 
 // 코드만

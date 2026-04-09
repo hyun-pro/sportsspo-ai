@@ -7,6 +7,7 @@ import LeagueBadge from '../components/LeagueBadge'
 import TeamBadge, { TeamLogo } from '../components/TeamBadge'
 import { displayTeamName, getShortName } from '../utils/teamNames'
 import PlayByPlay from '../components/PlayByPlay'
+import LiveChatPlay from '../components/LiveChatPlay'
 
 export default function GameDetail() {
   const { id } = useParams()
@@ -210,16 +211,18 @@ export default function GameDetail() {
         </div>
       )}
 
-      {/* ── 문자 중계 ── */}
+      {/* ── 실시간 채팅 + 문자중계 ── */}
       {(g.status === 'live' || g.status === 'final') && (
-        <div className="card p-4 sm:p-6 mb-4 sm:mb-6">
-          <h2 className="text-base sm:text-lg font-bold text-white mb-1 flex items-center gap-2">
-            <span className="text-base">📋</span>
-            문자 중계
-            {g.status === 'live' && <span className="text-[9px] text-gray-500 ml-1">15초마다 자동갱신</span>}
+        <div className="mb-4 sm:mb-6">
+          <h2 className="text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2">
+            실시간
+            {g.status === 'live' && (
+              <span className="text-[9px] text-red-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-red-400 rounded-full animate-pulse" />5초 갱신
+              </span>
+            )}
           </h2>
-          <p className="text-[10px] text-gray-600 mb-3">타석별 상세 기록 · 투구 내용 · 실시간 스코어</p>
-          <PlayByPlay gameId={g.id} isLive={g.status === 'live'} />
+          <LiveChatPlay gameId={g.id} isLive={g.status === 'live'} />
         </div>
       )}
 
