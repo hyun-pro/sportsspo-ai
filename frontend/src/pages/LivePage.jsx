@@ -5,8 +5,7 @@ import { getDashboardLive, getDashboardToday } from '../services/api'
 const LEAGUE_LABELS = {
   '': '전체', KBO: 'KBO', MLB: 'MLB', NPB: 'NPB',
   EPL: 'EPL', LALIGA: '라리가', BUNDESLIGA: '분데스', SERIE_A: '세리에A',
-  UCL: 'UCL', K_LEAGUE: 'K리그', J_LEAGUE: 'J리그',
-  NBA: 'NBA', VNL: '배구',
+  LIGUE1: '리그1', UCL: 'UCL', J_LEAGUE: 'J리그', NBA: 'NBA',
 }
 import { TeamLogo } from '../components/TeamBadge'
 import LeagueBadge from '../components/LeagueBadge'
@@ -65,6 +64,7 @@ export default function LivePage() {
 
   const finishedGames = filtered.filter(g => g.status === 'final')
   const scheduledGames = filtered.filter(g => g.status === 'scheduled')
+  const cancelledGames = filtered.filter(g => g.status === 'cancelled')
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -82,7 +82,7 @@ export default function LivePage() {
 
       {/* 스포츠 + 리그 필터 */}
       <div className="flex gap-1 flex-wrap">
-        {['', 'KBO', 'MLB', 'NPB', 'EPL', 'LALIGA', 'BUNDESLIGA', 'SERIE_A', 'UCL', 'K_LEAGUE', 'J_LEAGUE', 'NBA', 'VNL'].map(l => (
+        {['', 'KBO', 'MLB', 'NPB', 'EPL', 'LALIGA', 'BUNDESLIGA', 'SERIE_A', 'LIGUE1', 'UCL', 'J_LEAGUE', 'NBA'].map(l => (
           <button
             key={l}
             onClick={() => setFilter(l)}
@@ -149,6 +149,32 @@ export default function LivePage() {
           <div className="space-y-1">
             {finishedGames.map(g => (
               <FinishedGameRow key={g.id} game={g} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── 취소/연기 경기 ── */}
+      {cancelledGames.length > 0 && (
+        <section>
+          <h2 className="text-sm font-bold text-gray-500 mb-2">취소/연기 ({cancelledGames.length})</h2>
+          <div className="space-y-1">
+            {cancelledGames.map(g => (
+              <div key={g.id} className="card p-3 opacity-50">
+                <div className="flex items-center gap-3">
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-dark-600 text-gray-400">
+                    {LEAGUE_LABELS[g.league] || g.league}
+                  </span>
+                  <GameTeamLogo game={g} side="away" size="sm" />
+                  <span className="text-xs text-gray-500 truncate">{g.away_team}</span>
+                  <span className="text-[10px] text-gray-600">vs</span>
+                  <span className="text-xs text-gray-500 truncate">{g.home_team}</span>
+                  <GameTeamLogo game={g} side="home" size="sm" />
+                  <span className="ml-auto text-[10px] text-accent-red font-bold">
+                    {g.live_data?.statusDetail || '취소'}
+                  </span>
+                </div>
+              </div>
             ))}
           </div>
         </section>

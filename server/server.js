@@ -1787,12 +1787,9 @@ const ESPN_LEAGUES = [
   { sport: 'soccer', espn: 'ita.1', league: 'SERIE_A', name: '세리에A' },
   { sport: 'soccer', espn: 'fra.1', league: 'LIGUE1', name: '리그1' },
   { sport: 'soccer', espn: 'uefa.champions', league: 'UCL', name: '챔피언스리그' },
-  { sport: 'soccer', espn: 'kor.1', league: 'K_LEAGUE', name: 'K리그' },
   { sport: 'soccer', espn: 'jpn.1', league: 'J_LEAGUE', name: 'J리그' },
   // 농구
   { sport: 'basketball', espn: 'nba', league: 'NBA', name: 'NBA', espnSport: 'basketball' },
-  // 배구
-  { sport: 'volleyball', espn: 'fivb.vnl', league: 'VNL', name: '네이션스리그', espnSport: 'volleyball' },
 ]
 
 async function syncESPNSports() {
@@ -1823,10 +1820,11 @@ async function syncESPNSports() {
         const gameDate = ev.date ? new Date(ev.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
         const gameTime = ev.date ? new Date(ev.date).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Seoul' }) : null
 
-        const statusType = ev.status?.type?.name // STATUS_SCHEDULED, STATUS_IN_PROGRESS, STATUS_FINAL, STATUS_HALFTIME
+        const statusType = ev.status?.type?.name
         let status = 'scheduled'
         if (statusType === 'STATUS_FINAL' || statusType === 'STATUS_FULL_TIME') status = 'final'
-        else if (statusType === 'STATUS_IN_PROGRESS' || statusType === 'STATUS_HALFTIME' || statusType === 'STATUS_FIRST_HALF' || statusType === 'STATUS_SECOND_HALF') status = 'live'
+        else if (['STATUS_IN_PROGRESS', 'STATUS_HALFTIME', 'STATUS_FIRST_HALF', 'STATUS_SECOND_HALF', 'STATUS_END_PERIOD'].includes(statusType)) status = 'live'
+        else if (['STATUS_POSTPONED', 'STATUS_CANCELED', 'STATUS_SUSPENDED', 'STATUS_DELAYED'].includes(statusType)) status = 'cancelled'
 
         const homeScore = parseInt(homeTeam.score) || null
         const awayScore = parseInt(awayTeam.score) || null

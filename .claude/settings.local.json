@@ -94,7 +94,8 @@
       "Bash(curl -s --max-time 10 https://sportsspo-ai-api.onrender.com/api/health)",
       "Bash(curl -s --max-time 10 https://sportsspo-ai.onrender.com)",
       "Bash(curl:*)",
-      "WebFetch(domain:6ptotvmi5753.edge.naverncp.com)"
+      "WebFetch(domain:6ptotvmi5753.edge.naverncp.com)",
+      "Bash(python3 -c \"import sys,json; print\\(json.load\\(sys.stdin\\).get\\('events',[]\\).__len__\\(\\)\\)\")"
     ]
   }
 }
