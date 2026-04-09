@@ -1513,6 +1513,10 @@ async function syncLiveScores() {
   }
 }
 
+// ── 프론트엔드 정적 파일 서빙 ────────────────────────────────
+const clientBuildPath = join(__dirname, '..', 'frontend', 'dist')
+app.use(express.static(clientBuildPath))
+
 // ── Health ──────────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({
   status: 'ok',
@@ -1574,8 +1578,16 @@ async function start() {
   setInterval(syncLiveScores, 2 * 60 * 1000)
   console.log(`[live] 라이브 스코어: 2분마다 업데이트`)
 
+  // SPA fallback — /api 이외 모든 요청은 index.html로
+  const fs = await import('fs')
+  const indexPath = join(clientBuildPath, 'index.html')
+  if (fs.existsSync(indexPath)) {
+    app.get('*', (req, res) => res.sendFile(indexPath))
+    console.log(`[static] 프론트엔드 서빙: ${clientBuildPath}`)
+  }
+
   server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`\n  BallPredict API: http://0.0.0.0:${PORT}`)
+    console.log(`\n  스포츠스포AI: http://0.0.0.0:${PORT}`)
     console.log(`  Environment: ${NODE_ENV}`)
     console.log(`  Health check: /api/health\n`)
   })

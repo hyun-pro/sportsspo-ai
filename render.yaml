@@ -1,12 +1,11 @@
 services:
   - type: web
-    name: sportsspo-ai-api
+    name: sportsspo-ai
     runtime: node
     region: oregon
     plan: free
-    rootDir: server
-    buildCommand: npm install
-    startCommand: node server.js
+    buildCommand: cd frontend && npm install && npm run build && cd ../server && npm install
+    startCommand: cd server && node server.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -14,6 +13,4 @@ services:
         value: 8000
       - key: JWT_SECRET
         generateValue: true
-      - key: CORS_ORIGINS
-        value: https://sportsspo-ai.vercel.app,https://frontend-three-brown-74.vercel.app
     healthCheckPath: /api/health
