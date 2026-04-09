@@ -268,30 +268,34 @@ function LiveGameRow({ game, isExpanded, onToggle }) {
           <GameTeamLogo game={game} side="home" size="md" />
         </div>
 
-        {/* 아웃 + 다이아몬드 */}
-        <div className="hidden sm:flex items-center gap-2 shrink-0 ml-2">
-          <div className="flex flex-col items-center gap-0.5">
-            <div className="flex gap-0.5">
-              {[0,1,2].map(i => (
-                <div key={i} className={`w-1.5 h-1.5 rounded-full ${i < outs ? 'bg-red-500' : 'bg-dark-600'}`} />
-              ))}
-            </div>
-            <span className="text-[8px] text-gray-600">OUT</span>
-          </div>
-          <svg viewBox="0 0 24 24" className="w-5 h-5">
-            <path d="M12 2 L22 12 L12 22 L2 12 Z" fill="none" stroke="#374151" strokeWidth="1" />
-            <rect x="18" y="9" width="4" height="4" rx="0.5" fill={runners.first ? '#EAB308' : '#1F2937'} />
-            <rect x="10" y="1" width="4" height="4" rx="0.5" fill={runners.second ? '#EAB308' : '#1F2937'} />
-            <rect x="2" y="9" width="4" height="4" rx="0.5" fill={runners.third ? '#EAB308' : '#1F2937'} />
-          </svg>
-        </div>
-
         {/* 화살표 */}
         <svg className={`w-4 h-4 text-gray-500 transition-transform shrink-0 ${isExpanded ? 'rotate-180' : ''}`}
           fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </div>
+
+      {/* 예측 정보 (항상 표시) */}
+      {pred && pred.recommended_pick !== 'locked' && (
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-dark-700/50 px-1">
+          <div className="flex items-center gap-3">
+            <div className="text-[10px] text-gray-500">
+              AI 추천: <span className={`font-bold ${pickHome ? 'text-accent-blue' : 'text-accent-purple'}`}>
+                {pickHome ? getShortName(game.home_team) : getShortName(game.away_team)}
+              </span>
+            </div>
+            <div className="text-[10px] text-gray-500">
+              승률 <span className="font-bold text-white">{Math.max(pred.home_win_probability, pred.away_win_probability)}%</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className={`w-2 h-2 rounded-full ${pred.confidence_score >= 70 ? 'bg-emerald-500' : pred.confidence_score >= 40 ? 'bg-amber-500' : 'bg-gray-600'}`} />
+              <span className="text-[10px] text-gray-500">신뢰도 <span className="text-gray-300">{pred.confidence_score}</span></span>
+            </div>
+          </div>
+          <Link to={`/game/${game.id}`} onClick={e => e.stopPropagation()}
+            className="text-[10px] text-gray-600 hover:text-white">상세분석 →</Link>
+        </div>
+      )}
     </div>
   )
 }
@@ -321,15 +325,21 @@ function ScheduledGameRow({ game }) {
           <GameTeamLogo game={game} side="home" size="sm" />
         </div>
 
-        {pred && (
-          <div className="shrink-0 text-right hidden sm:block">
-            <div className={`text-[10px] font-bold ${pickHome ? 'text-accent-blue' : 'text-accent-purple'}`}>
-              {pickHome ? getShortName(game.home_team) : getShortName(game.away_team)} {Math.max(pred.home_win_probability, pred.away_win_probability)}%
-            </div>
-            <ConfidenceBadge score={pred.confidence_score} size="sm" />
-          </div>
-        )}
       </div>
+
+      {/* 예측 정보 (모바일에서도 표시) */}
+      {pred && pred.recommended_pick !== 'locked' && (
+        <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-dark-700/50">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-500">AI:</span>
+            <span className={`text-[10px] font-bold ${pickHome ? 'text-accent-blue' : 'text-accent-purple'}`}>
+              {pickHome ? getShortName(game.home_team) : getShortName(game.away_team)} {Math.max(pred.home_win_probability, pred.away_win_probability)}%
+            </span>
+            <span className={`w-1.5 h-1.5 rounded-full ${pred.confidence_score >= 70 ? 'bg-emerald-500' : pred.confidence_score >= 40 ? 'bg-amber-500' : 'bg-gray-600'}`} />
+            <span className="text-[10px] text-gray-500">{pred.confidence_score}</span>
+          </div>
+        </div>
+      )}
     </Link>
   )
 }
