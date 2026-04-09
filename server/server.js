@@ -114,6 +114,46 @@ db.exec(`
   );
 `)
 
+// 커뮤니티 테이블
+db.exec(`
+  CREATE TABLE IF NOT EXISTS posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    game_league TEXT,
+    game_teams TEXT,
+    bet_odds REAL,
+    bet_amount INTEGER,
+    bet_profit INTEGER,
+    bet_result TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+  CREATE TABLE IF NOT EXISTS comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES posts(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+  CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT,
+    is_read INTEGER DEFAULT 0,
+    link TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`)
+
 // 안전하게 컬럼 추가 (이미 있으면 무시)
 try { db.exec('ALTER TABLE predictions ADD COLUMN bullpen_score REAL') } catch {}
 try { db.exec('ALTER TABLE predictions ADD COLUMN recent_form_score REAL') } catch {}
@@ -121,6 +161,12 @@ try { db.exec('ALTER TABLE games ADD COLUMN current_inning INTEGER') } catch {}
 try { db.exec('ALTER TABLE games ADD COLUMN inning_half TEXT') } catch {}
 try { db.exec('ALTER TABLE games ADD COLUMN outs INTEGER') } catch {}
 try { db.exec('ALTER TABLE games ADD COLUMN live_data TEXT') } catch {}
+// 유저 신규 컬럼
+try { db.exec('ALTER TABLE users ADD COLUMN nickname TEXT UNIQUE') } catch {}
+try { db.exec('ALTER TABLE users ADD COLUMN phone TEXT') } catch {}
+try { db.exec('ALTER TABLE users ADD COLUMN birthday TEXT') } catch {}
+try { db.exec('ALTER TABLE users ADD COLUMN privacy_agreed INTEGER DEFAULT 0') } catch {}
+try { db.exec('ALTER TABLE users ADD COLUMN plan TEXT DEFAULT "free"') } catch {}
 
 // ── Korean Team Name Mapping ────────────────────────────────
 const TEAM_NAME_KR = {
@@ -1025,10 +1071,10 @@ function generatePredictions(league) {
 function seedUsers() {
   const existing = db.prepare('SELECT COUNT(*) as c FROM users').get()
   if (existing.c > 0) return
-  const insertUser = db.prepare('INSERT INTO users (email, hashed_password, name, is_admin, subscription_status) VALUES (?,?,?,?,?)')
-  insertUser.run('admin@ballpredict.com', bcrypt.hashSync('admin123', 10), 'Admin', 1, 'active')
-  insertUser.run('0000', bcrypt.hashSync('0000', 10), 'PRO 테스트', 0, 'active')
-  insertUser.run('demo@ballpredict.com', bcrypt.hashSync('demo123', 10), 'Demo User', 0, 'free')
+  const insertUser = db.prepare('INSERT INTO users (email, hashed_password, name, nickname, is_admin, subscription_status, plan, privacy_agreed) VALUES (?,?,?,?,?,?,?,?)')
+  insertUser.run('admin@ballpredict.com', bcrypt.hashSync('admin123', 10), 'Admin', '운영자', 1, 'active', 'premium', 1)
+  insertUser.run('0000', bcrypt.hashSync('0000', 10), 'PRO 테스트', 'PRO유저', 0, 'active', 'pro', 1)
+  insertUser.run('demo01', bcrypt.hashSync('demo0000!', 10), '데모유저', '야구팬', 0, 'free', 'free', 1)
   console.log('사용자 계정 생성 완료')
 }
 
@@ -1060,12 +1106,24 @@ function isPremium(user) {
 
 // ── Auth Routes ─────────────────────────────────────────────
 app.post('/api/auth/register', (req, res) => {
-  const { email, password, name } = req.body
-  if (!email || !password) return res.status(400).json({ detail: '이메일과 비밀번호를 입력하세요' })
-  const exists = db.prepare('SELECT id FROM users WHERE email = ?').get(email)
-  if (exists) return res.status(400).json({ detail: '이미 등록된 이메일입니다' })
+  const { email, password, name, nickname, phone, birthday, privacy_agreed } = req.body
+  if (!email || !password || !nickname) return res.status(400).json({ detail: '아이디, 비밀번호, 닉네임을 입력하세요' })
+  // 아이디 검증: 영문+숫자 6자 이상
+  if (!/^[a-zA-Z0-9]{6,}$/.test(email)) return res.status(400).json({ detail: '아이디는 영문, 숫자 조합 6자 이상이어야 합니다' })
+  // 비밀번호 검증: 영문+숫자+특수문자 8자 이상
+  if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/[0-9]/.test(password) || !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password))
+    return res.status(400).json({ detail: '비밀번호는 영문, 숫자, 특수문자 포함 8자 이상이어야 합니다' })
+  // 닉네임 중복 검사
+  if (db.prepare('SELECT id FROM users WHERE nickname = ?').get(nickname))
+    return res.status(400).json({ detail: '이미 사용중인 닉네임입니다' })
+  if (db.prepare('SELECT id FROM users WHERE email = ?').get(email))
+    return res.status(400).json({ detail: '이미 등록된 아이디입니다' })
+  if (!privacy_agreed) return res.status(400).json({ detail: '개인정보 수집에 동의해주세요' })
+
   const hashed = bcrypt.hashSync(password, 10)
-  const result = db.prepare('INSERT INTO users (email, hashed_password, name) VALUES (?,?,?)').run(email, hashed, name || null)
+  const result = db.prepare('INSERT INTO users (email, hashed_password, name, nickname, phone, birthday, privacy_agreed, plan) VALUES (?,?,?,?,?,?,?,?)').run(
+    email, hashed, name || null, nickname, phone || null, birthday || null, privacy_agreed ? 1 : 0, 'free'
+  )
   const token = jwt.sign({ sub: result.lastInsertRowid }, SECRET, { expiresIn: '24h' })
   res.status(201).json({ access_token: token, token_type: 'bearer' })
 })
@@ -1074,14 +1132,146 @@ app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email)
   if (!user || !bcrypt.compareSync(password, user.hashed_password))
-    return res.status(401).json({ detail: '이메일 또는 비밀번호가 올바르지 않습니다' })
+    return res.status(401).json({ detail: '아이디 또는 비밀번호가 올바르지 않습니다' })
   const token = jwt.sign({ sub: user.id }, SECRET, { expiresIn: '24h' })
   res.json({ access_token: token, token_type: 'bearer' })
 })
 
 app.get('/api/auth/me', authMiddleware, (req, res) => {
   const u = req.user
-  res.json({ id: u.id, email: u.email, name: u.name, subscription_status: u.subscription_status, is_admin: !!u.is_admin, created_at: u.created_at })
+  res.json({ id: u.id, email: u.email, name: u.name, nickname: u.nickname, phone: u.phone, birthday: u.birthday, subscription_status: u.subscription_status, plan: u.plan || 'free', is_admin: !!u.is_admin, created_at: u.created_at })
+})
+
+// 닉네임 중복 검사
+app.get('/api/auth/check-nickname', (req, res) => {
+  const { nickname } = req.query
+  const exists = db.prepare('SELECT id FROM users WHERE nickname = ?').get(nickname)
+  res.json({ available: !exists })
+})
+
+// ── Community Routes ────────────────────────────────────────
+// 글 목록
+app.get('/api/community/posts', (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page) || 1)
+  const limit = 20
+  const offset = (page - 1) * limit
+  const total = db.prepare('SELECT COUNT(*) as c FROM posts').get().c
+  const posts = db.prepare(`
+    SELECT p.*, u.nickname, u.plan FROM posts p
+    JOIN users u ON u.id = p.user_id
+    ORDER BY p.created_at DESC LIMIT ? OFFSET ?
+  `).all(limit, offset)
+
+  const postsWithComments = posts.map(p => ({
+    ...p,
+    comment_count: db.prepare('SELECT COUNT(*) as c FROM comments WHERE post_id = ?').get(p.id).c,
+  }))
+  res.json({ posts: postsWithComments, total, page, pages: Math.ceil(total / limit) })
+})
+
+// 글 상세
+app.get('/api/community/posts/:id', (req, res) => {
+  const post = db.prepare(`
+    SELECT p.*, u.nickname, u.plan FROM posts p
+    JOIN users u ON u.id = p.user_id WHERE p.id = ?
+  `).get(req.params.id)
+  if (!post) return res.status(404).json({ detail: '글을 찾을 수 없습니다' })
+
+  const comments = db.prepare(`
+    SELECT c.*, u.nickname, u.plan FROM comments c
+    JOIN users u ON u.id = c.user_id
+    WHERE c.post_id = ? ORDER BY c.created_at ASC
+  `).all(req.params.id)
+
+  res.json({ post, comments })
+})
+
+// 글 작성
+app.post('/api/community/posts', authMiddleware, (req, res) => {
+  const { title, content, game_league, game_teams, bet_odds, bet_amount, bet_profit, bet_result } = req.body
+  if (!title || !content) return res.status(400).json({ detail: '제목과 내용을 입력하세요' })
+  const result = db.prepare(
+    'INSERT INTO posts (user_id, title, content, game_league, game_teams, bet_odds, bet_amount, bet_profit, bet_result) VALUES (?,?,?,?,?,?,?,?,?)'
+  ).run(req.user.id, title, content, game_league || null, game_teams || null, bet_odds || null, bet_amount || null, bet_profit || null, bet_result || null)
+  res.status(201).json({ id: result.lastInsertRowid })
+})
+
+// 글 삭제 (본인 또는 관리자)
+app.delete('/api/community/posts/:id', authMiddleware, (req, res) => {
+  const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(req.params.id)
+  if (!post) return res.status(404).json({ detail: '글을 찾을 수 없습니다' })
+  if (post.user_id !== req.user.id && !req.user.is_admin) return res.status(403).json({ detail: '권한이 없습니다' })
+  db.prepare('DELETE FROM comments WHERE post_id = ?').run(req.params.id)
+  db.prepare('DELETE FROM posts WHERE id = ?').run(req.params.id)
+  res.json({ ok: true })
+})
+
+// 댓글 작성
+app.post('/api/community/posts/:id/comments', authMiddleware, (req, res) => {
+  const { content } = req.body
+  if (!content) return res.status(400).json({ detail: '댓글 내용을 입력하세요' })
+  const post = db.prepare('SELECT id FROM posts WHERE id = ?').get(req.params.id)
+  if (!post) return res.status(404).json({ detail: '글을 찾을 수 없습니다' })
+  const result = db.prepare('INSERT INTO comments (post_id, user_id, content) VALUES (?,?,?)').run(req.params.id, req.user.id, content)
+  res.status(201).json({ id: result.lastInsertRowid })
+})
+
+// 댓글 수정
+app.put('/api/community/comments/:id', authMiddleware, (req, res) => {
+  const comment = db.prepare('SELECT * FROM comments WHERE id = ?').get(req.params.id)
+  if (!comment) return res.status(404).json({ detail: '댓글을 찾을 수 없습니다' })
+  if (comment.user_id !== req.user.id) return res.status(403).json({ detail: '권한이 없습니다' })
+  db.prepare('UPDATE comments SET content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(req.body.content, req.params.id)
+  res.json({ ok: true })
+})
+
+// 댓글 삭제
+app.delete('/api/community/comments/:id', authMiddleware, (req, res) => {
+  const comment = db.prepare('SELECT * FROM comments WHERE id = ?').get(req.params.id)
+  if (!comment) return res.status(404).json({ detail: '댓글을 찾을 수 없습니다' })
+  if (comment.user_id !== req.user.id && !req.user.is_admin) return res.status(403).json({ detail: '권한이 없습니다' })
+  db.prepare('DELETE FROM comments WHERE id = ?').run(req.params.id)
+  res.json({ ok: true })
+})
+
+// ── Notification Routes ─────────────────────────────────────
+app.get('/api/notifications', authMiddleware, (req, res) => {
+  const notifs = db.prepare('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50').all(req.user.id)
+  const unread = db.prepare('SELECT COUNT(*) as c FROM notifications WHERE user_id = ? AND is_read = 0').get(req.user.id).c
+  res.json({ notifications: notifs, unread })
+})
+
+app.put('/api/notifications/read-all', authMiddleware, (req, res) => {
+  db.prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ?').run(req.user.id)
+  res.json({ ok: true })
+})
+
+// ── Admin Stats ─────────────────────────────────────────────
+app.get('/api/admin/stats', authMiddleware, (req, res) => {
+  if (!req.user.is_admin) return res.status(403).json({ detail: '관리자 전용' })
+  const totalUsers = db.prepare('SELECT COUNT(*) as c FROM users').get().c
+  const proUsers = db.prepare("SELECT COUNT(*) as c FROM users WHERE plan = 'pro'").get().c
+  const premiumUsers = db.prepare("SELECT COUNT(*) as c FROM users WHERE plan = 'premium'").get().c
+  const todayUsers = db.prepare("SELECT COUNT(*) as c FROM users WHERE date(created_at) = date('now')").get().c
+  const totalPosts = db.prepare('SELECT COUNT(*) as c FROM posts').get().c
+  const totalComments = db.prepare('SELECT COUNT(*) as c FROM comments').get().c
+  const totalGames = db.prepare('SELECT COUNT(*) as c FROM games').get().c
+  const totalPredictions = db.prepare('SELECT COUNT(*) as c FROM predictions').get().c
+  const accuracy = db.prepare(`
+    SELECT COUNT(CASE WHEN (p.recommended_pick='home' AND g.home_score>g.away_score) OR (p.recommended_pick='away' AND g.away_score>g.home_score) THEN 1 END) as correct,
+    COUNT(*) as total
+    FROM predictions p JOIN games g ON g.id=p.game_id WHERE g.status='final' AND g.home_score IS NOT NULL
+  `).get()
+  const recentUsers = db.prepare('SELECT id, email, nickname, plan, created_at FROM users ORDER BY created_at DESC LIMIT 10').all()
+  const planBreakdown = db.prepare("SELECT plan, COUNT(*) as count FROM users GROUP BY plan").all()
+
+  res.json({
+    totalUsers, proUsers, premiumUsers, todayUsers,
+    totalPosts, totalComments, totalGames, totalPredictions,
+    accuracy: { correct: accuracy.correct, total: accuracy.total, rate: accuracy.total > 0 ? Math.round(accuracy.correct / accuracy.total * 1000) / 10 : 0 },
+    recentUsers, planBreakdown,
+    mrr: proUsers * 29900 + premiumUsers * 59900,
+  })
 })
 
 // ── Games Routes ────────────────────────────────────────────

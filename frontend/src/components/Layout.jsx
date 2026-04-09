@@ -2,43 +2,19 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { PricingBanner } from './PricingCard'
 
-const NAV_ITEMS = [
-  {
-    path: '/live', label: '실시간', live: true,
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
-        <circle cx="12" cy="12" r="10" />
-        <polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none" />
-      </svg>
-    ),
-  },
-  {
-    path: '/', label: '대시보드',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
-        <rect x="3" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="3" width="7" height="7" rx="1" />
-        <rect x="3" y="14" width="7" height="7" rx="1" />
-        <rect x="14" y="14" width="7" height="7" rx="1" />
-      </svg>
-    ),
-  },
-  {
-    path: '/games', label: '경기예측',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
-        <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
-    ),
-  },
-  {
-    path: '/dashboard', label: '내 정보', auth: true,
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
-        <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      </svg>
-    ),
-  },
+const I = (d) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><path d={d} strokeLinecap="round" strokeLinejoin="round" /></svg>
+
+const NAV_MAIN = [
+  { path: '/live', label: '실시간', live: true, icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><circle cx="12" cy="12" r="10" /><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none" /></svg> },
+  { path: '/', label: '대시보드', icon: I('M4 6h16M4 10h16M4 14h16M4 18h16') },
+  { path: '/games', label: '경기예측', icon: I('M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6m6 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0h6m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14') },
+  { path: '/community', label: '커뮤니티', icon: I('M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-1m0-3V6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2h-3l-4 4V12H9a2 2 0 01-2-2z') },
+]
+
+const NAV_SUB = [
+  { path: '/subscription', label: '요금제', icon: I('M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z') },
+  { path: '/guide', label: '가이드', icon: I('M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253') },
+  { path: '/dashboard', label: '내 정보', auth: true, icon: I('M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z') },
 ]
 
 export default function Layout({ children }) {
@@ -51,7 +27,9 @@ export default function Layout({ children }) {
     navigate('/')
   }
 
-  const visibleItems = NAV_ITEMS.filter(item => !item.auth || user)
+  const mainItems = NAV_MAIN
+  const subItems = NAV_SUB.filter(item => !item.auth || user)
+  const bottomItems = [...NAV_MAIN.slice(0, 3), { path: '/community', label: '커뮤니티', icon: NAV_MAIN[3]?.icon }].slice(0, 5)
 
   return (
     <div className="min-h-screen bg-dark-950 flex">
@@ -69,48 +47,22 @@ export default function Layout({ children }) {
         </a>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {visibleItems.map(item => {
-            const isActive = item.path === '/'
-              ? location.pathname === '/'
-              : location.pathname.startsWith(item.path)
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ripple-effect ${
-                  isActive
-                    ? 'bg-accent-blue/10 text-accent-blue border border-accent-blue/20'
-                    : 'text-gray-400 hover:text-white hover:bg-dark-700/50'
-                }`}
-              >
-                <span className={isActive ? 'text-accent-blue' : 'text-gray-500'}>{item.icon}</span>
-                {item.label}
-                {item.live && (
-                  <span className="ml-auto relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                  </span>
-                )}
-              </Link>
-            )
-          })}
+        <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-hide">
+          <div className="text-[9px] font-bold text-gray-600 uppercase tracking-wider px-3 mb-2">메인</div>
+          <div className="space-y-0.5 mb-4">
+            {mainItems.map(item => <SidebarLink key={item.path} item={item} location={location} />)}
+          </div>
+
+          <div className="text-[9px] font-bold text-gray-600 uppercase tracking-wider px-3 mb-2">더보기</div>
+          <div className="space-y-0.5 mb-4">
+            {subItems.map(item => <SidebarLink key={item.path} item={item} location={location} />)}
+          </div>
 
           {user?.is_admin && (
-            <Link
-              to="/admin"
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                location.pathname === '/admin'
-                  ? 'bg-accent-purple/10 text-accent-purple'
-                  : 'text-gray-400 hover:text-white hover:bg-dark-700/50'
-              }`}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
-                <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              관리자
-            </Link>
+            <>
+              <div className="text-[9px] font-bold text-gray-600 uppercase tracking-wider px-3 mb-2">관리</div>
+              <SidebarLink item={{ path: '/admin', label: '관리자', icon: I('M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37.996-.608.07-2.296-1.065-2.572') }} location={location} />
+            </>
           )}
         </nav>
 
@@ -189,7 +141,7 @@ export default function Layout({ children }) {
       {/* ── Mobile Bottom Tab Bar ── */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 glass border-t border-dark-600/50">
         <div className="flex items-center justify-around h-14 max-w-lg mx-auto">
-          {visibleItems.slice(0, 4).map(item => {
+          {NAV_MAIN.map(item => {
             const isActive = item.path === '/'
               ? location.pathname === '/'
               : location.pathname.startsWith(item.path)
@@ -197,24 +149,48 @@ export default function Layout({ children }) {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center justify-center gap-0.5 w-16 py-1 rounded-xl transition-all ripple-effect ${
+                className={`flex flex-col items-center justify-center gap-0.5 w-14 py-1 rounded-xl transition-all ${
                   isActive ? 'text-accent-blue' : 'text-gray-500'
                 }`}
               >
                 <span className="relative">
                   {item.icon}
-                  {item.live && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                  )}
+                  {item.live && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>}
                 </span>
-                <span className={`text-[10px] font-medium ${isActive ? 'text-accent-blue' : 'text-gray-600'}`}>
-                  {item.label}
-                </span>
+                <span className={`text-[9px] font-medium ${isActive ? 'text-accent-blue' : 'text-gray-600'}`}>{item.label}</span>
               </Link>
             )
           })}
+          {/* 더보기 */}
+          <Link to="/guide" className={`flex flex-col items-center justify-center gap-0.5 w-14 py-1 rounded-xl transition-all ${
+            ['/guide', '/subscription', '/dashboard'].includes(location.pathname) ? 'text-accent-blue' : 'text-gray-500'
+          }`}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
+              <circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" />
+            </svg>
+            <span className="text-[9px] font-medium">더보기</span>
+          </Link>
         </div>
       </nav>
     </div>
+  )
+}
+
+function SidebarLink({ item, location }) {
+  const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
+  return (
+    <Link to={item.path}
+      className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+        isActive ? 'bg-accent-blue/10 text-accent-blue' : 'text-gray-400 hover:text-white hover:bg-dark-700/50'
+      }`}>
+      <span className={isActive ? 'text-accent-blue' : 'text-gray-500'}>{item.icon}</span>
+      {item.label}
+      {item.live && (
+        <span className="ml-auto relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+        </span>
+      )}
+    </Link>
   )
 }

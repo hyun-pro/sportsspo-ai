@@ -10,21 +10,23 @@ const PLANS = [
     desc: '기본 경기 정보 확인',
     color: 'gray',
     features: [
-      { text: '하루 3개 예측', included: true },
+      { text: '하루 1개 예측', included: true },
       { text: '기본 경기 정보', included: true },
       { text: '일부 리그', included: true },
       { text: '투수 매치업 분석', included: false },
       { text: '신뢰도 지표', included: false },
       { text: 'ELO 고급 지표', included: false },
+      { text: '닉네임 뱃지', included: false },
     ],
   },
   {
     id: 'pro',
     name: 'PRO',
-    price: 9900,
+    price: 29900,
     period: '월',
-    desc: '전체 분석 + 실시간 예측',
+    desc: '전체 분석 + PRO 뱃지',
     badge: '인기',
+    badgeDetail: 'PRO 뱃지 지급',
     color: 'blue',
     features: [
       { text: '무제한 예측', included: true },
@@ -32,24 +34,43 @@ const PLANS = [
       { text: '투수 매치업 분석', included: true },
       { text: '신뢰도 지표', included: true },
       { text: 'ELO 고급 지표', included: true },
+      { text: '닉네임 PRO 뱃지', included: true },
       { text: '실시간 인게임 예측', included: false },
     ],
   },
   {
     id: 'premium',
     name: 'PREMIUM',
-    price: 19900,
+    price: 59900,
     period: '월',
-    desc: '모든 기능 + 독점 분석',
+    desc: '모든 기능 + VIP 뱃지',
     badge: '추천',
+    badgeDetail: 'VIP 뱃지 지급',
     color: 'purple',
     features: [
       { text: '무제한 예측', included: true },
       { text: 'MLB+KBO+NPB 전체', included: true },
       { text: '투수 매치업 분석', included: true },
-      { text: '신뢰도 지표', included: true },
-      { text: 'ELO 고급 지표', included: true },
+      { text: '신뢰도 + ELO 고급 지표', included: true },
       { text: '실시간 인게임 예측', included: true },
+      { text: '닉네임 VIP 뱃지', included: true },
+      { text: '우선 고객 지원', included: true },
+    ],
+  },
+  {
+    id: 'annual',
+    name: '연간 PREMIUM',
+    price: 490000,
+    period: '년',
+    desc: 'PREMIUM 12개월 (31% 할인)',
+    badge: '최저가',
+    badgeDetail: 'VIP 뱃지 지급',
+    color: 'purple',
+    features: [
+      { text: 'PREMIUM 전체 기능 포함', included: true },
+      { text: '월 ₩40,833 (31% 할인)', included: true },
+      { text: '닉네임 VIP 뱃지', included: true },
+      { text: '12개월 약정', included: true },
     ],
   },
 ]
@@ -139,7 +160,7 @@ export function PricingBanner() {
             무제한 예측 · 전체 리그 · 고급 분석
           </p>
           <div className="mt-2 text-[10px] font-bold text-accent-blue group-hover:text-blue-400 transition-colors">
-            ₩9,900/월 →
+            ₩29,900/월 →
           </div>
         </div>
       </div>

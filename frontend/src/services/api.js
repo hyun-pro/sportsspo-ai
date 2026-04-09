@@ -9,9 +9,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
@@ -20,9 +18,7 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem('token')
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
-      }
+      if (window.location.pathname !== '/login') window.location.href = '/login'
     }
     return Promise.reject(err)
   }
@@ -32,6 +28,7 @@ api.interceptors.response.use(
 export const register = (data) => api.post('/auth/register', data)
 export const login = (data) => api.post('/auth/login', data)
 export const getMe = () => api.get('/auth/me')
+export const checkNickname = (nickname) => api.get('/auth/check-nickname', { params: { nickname } })
 
 // Games
 export const getGames = (params) => api.get('/games', { params })
@@ -58,7 +55,21 @@ export const getDashboardTopPicks = () => api.get('/dashboard/top-picks')
 export const getDashboardRecentResults = (params) => api.get('/dashboard/recent-results', { params })
 export const getLeagueStandings = (league) => api.get('/dashboard/league-standings', { params: { league } })
 
+// Community
+export const getPosts = (params) => api.get('/community/posts', { params })
+export const getPost = (id) => api.get(`/community/posts/${id}`)
+export const createPost = (data) => api.post('/community/posts', data)
+export const deletePost = (id) => api.delete(`/community/posts/${id}`)
+export const createComment = (postId, data) => api.post(`/community/posts/${postId}/comments`, data)
+export const updateComment = (id, data) => api.put(`/community/comments/${id}`, data)
+export const deleteComment = (id) => api.delete(`/community/comments/${id}`)
+
+// Notifications
+export const getNotifications = () => api.get('/notifications')
+export const markAllRead = () => api.put('/notifications/read-all')
+
 // Admin
+export const getAdminStats = () => api.get('/admin/stats')
 export const getAdminDashboard = () => api.get('/admin/dashboard')
 export const getAdminUsers = () => api.get('/admin/users')
 
