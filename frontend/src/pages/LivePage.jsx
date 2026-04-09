@@ -47,7 +47,7 @@ export default function LivePage() {
   useEffect(() => {
     fetchAll()
     // 15초마다 갱신
-    intervalRef.current = setInterval(fetchAll, 15000)
+    intervalRef.current = setInterval(fetchAll, 10000) // 10초
     return () => clearInterval(intervalRef.current)
   }, [])
 

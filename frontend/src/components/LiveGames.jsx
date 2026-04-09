@@ -22,7 +22,7 @@ export default function LiveGames() {
 
   useEffect(() => {
     fetchLive()
-    intervalRef.current = setInterval(fetchLive, 30000)
+    intervalRef.current = setInterval(fetchLive, 10000) // 10초
     return () => clearInterval(intervalRef.current)
   }, [])
 

@@ -2231,9 +2231,9 @@ async function start() {
   console.log(`[sync] 주기: ${SYNC_INTERVAL / 1000 / 60}분마다 자동 동기화`)
 
   // 라이브 스코어 빠른 동기화 (2분마다)
-  setInterval(syncLiveScores, 2 * 60 * 1000)
-  setInterval(syncESPNLive, 2 * 60 * 1000)
-  console.log(`[live] 라이브 스코어: 2분마다 업데이트 (야구+축구+농구+배구)`)
+  setInterval(syncLiveScores, 30 * 1000)  // 30초
+  setInterval(syncESPNLive, 30 * 1000)    // 30초
+  console.log(`[live] 라이브 스코어: 30초마다 업데이트`)
 
   // SPA fallback — /api 이외 모든 요청은 index.html로
   const fs = await import('fs')

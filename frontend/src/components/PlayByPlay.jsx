@@ -16,7 +16,7 @@ export default function PlayByPlay({ gameId, isLive }) {
   useEffect(() => {
     fetch()
     if (isLive) {
-      intervalRef.current = setInterval(fetch, 15000) // 15초마다 갱신
+      intervalRef.current = setInterval(fetch, 10000) // 10초마다 갱신
       return () => clearInterval(intervalRef.current)
     }
   }, [gameId, isLive])
