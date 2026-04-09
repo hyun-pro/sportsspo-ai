@@ -1,12 +1,14 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { PricingBanner } from './PricingCard'
+import { getNotifications, getAnnouncements } from '../services/api'
 
 const I = (d) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><path d={d} strokeLinecap="round" strokeLinejoin="round" /></svg>
 
 const NAV_MAIN = [
   { path: '/live', label: '실시간', live: true, icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><circle cx="12" cy="12" r="10" /><polygon points="10,8 16,12 10,16" fill="currentColor" stroke="none" /></svg> },
-  { path: '/', label: '대시보드', icon: I('M4 6h16M4 10h16M4 14h16M4 18h16') },
+  { path: '/', label: '승률분석', icon: I('M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z') },
   { path: '/community', label: '커뮤니티', icon: I('M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-1m0-3V6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2h-3l-4 4V12H9a2 2 0 01-2-2z') },
 ]
 
@@ -32,6 +34,24 @@ export default function Layout({ children }) {
   const { user, isPremium, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+
+  const [unreadNotifs, setUnreadNotifs] = useState(0)
+  const [newAnnouncements, setNewAnnouncements] = useState(0)
+
+  // 알림 + 공지 카운트 가져오기
+  useEffect(() => {
+    if (user) {
+      getNotifications().then(res => setUnreadNotifs(res.data.unread || 0)).catch(() => {})
+    }
+    getAnnouncements().then(res => {
+      // 최근 3일 이내 공지 개수
+      const recent = (res.data || []).filter(a => {
+        const diff = (Date.now() - new Date(a.created_at).getTime()) / 86400000
+        return diff < 3
+      })
+      setNewAnnouncements(recent.length)
+    }).catch(() => {})
+  }, [user, location.pathname])
 
   const handleLogout = () => {
     logout()
@@ -81,7 +101,10 @@ export default function Layout({ children }) {
 
           <div className="text-[9px] font-bold text-gray-600 uppercase tracking-wider px-3 mb-2">더보기</div>
           <div className="space-y-0.5 mb-4">
-            {subItems.map(item => <SidebarLink key={item.path} item={item} location={location} />)}
+            {subItems.map(item => (
+              <SidebarLink key={item.path} item={item} location={location}
+                badge={item.path === '/notifications' ? unreadNotifs : item.path === '/announcements' ? newAnnouncements : 0} />
+            ))}
           </div>
 
           {user?.is_admin && (
@@ -138,6 +161,19 @@ export default function Layout({ children }) {
             </span>
           </a>
           <div className="flex items-center gap-2">
+            {/* 알림 아이콘 */}
+            {user && (
+              <Link to="/notifications" className="relative p-1">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5 text-gray-400">
+                  <path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {unreadNotifs > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-accent-red text-white text-[8px] font-black min-w-[14px] h-[14px] rounded-full flex items-center justify-center">
+                    {unreadNotifs > 9 ? '9+' : unreadNotifs}
+                  </span>
+                )}
+              </Link>
+            )}
             {isPremium && (
               <span className="text-[10px] font-bold text-accent-green bg-accent-green/10 px-2 py-0.5 rounded-full">PRO</span>
             )}
@@ -202,7 +238,7 @@ export default function Layout({ children }) {
   )
 }
 
-function SidebarLink({ item, location }) {
+function SidebarLink({ item, location, badge }) {
   const isActive = item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path)
   return (
     <Link to={item.path}
@@ -215,6 +251,11 @@ function SidebarLink({ item, location }) {
         <span className="ml-auto relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
           <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+        </span>
+      )}
+      {badge > 0 && !item.live && (
+        <span className="ml-auto bg-accent-red text-white text-[9px] font-black min-w-[18px] h-[18px] rounded-full flex items-center justify-center">
+          {badge > 99 ? '99+' : badge}
         </span>
       )}
     </Link>
