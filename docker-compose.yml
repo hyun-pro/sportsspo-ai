@@ -1,0 +1,64 @@
+version: "3.8"
+
+# ─────────────────────────────────────────────────────
+# BallPredict Production Stack
+#
+# 실행: docker compose up -d
+# 로그: docker compose logs -f api
+# ─────────────────────────────────────────────────────
+
+services:
+  # ── API 서버 (Express.js) ──────────────────────────
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    env_file: ./server/.env
+    environment:
+      - NODE_ENV=production
+      - DB_PATH=/data/ballpredict.db
+    ports:
+      - "8000:8000"
+    volumes:
+      - db_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # ── 데이터 동기화 Worker ───────────────────────────
+  worker:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.worker
+    env_file: ./server/.env
+    environment:
+      - DB_PATH=/data/ballpredict.db
+      - SYNC_INTERVAL_MS=1800000
+    volumes:
+      - db_data:/data
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # ── 프론트엔드 (Nginx) ────────────────────────────
+  # 로컬 프리뷰용. 프로덕션은 Vercel 사용 권장.
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8000/api
+    ports:
+      - "3000:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db_data:

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.env.local
+__pycache__/
+*.pyc
+.venv/
+venv/
+postgres_data/
+.DS_Store
+*.db
+*.db-shm
+*.db-wal
+.vercel/

@@ -1,0 +1,23 @@
+{
+  "name": "ballpredict-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "worker": "node worker.js",
+    "worker:loop": "node worker.js --loop",
+    "worker:mlb": "node worker.js --league mlb",
+    "worker:kbo": "node worker.js --league kbo",
+    "worker:npb": "node worker.js --league npb",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.7.0",
+    "cheerio": "^1.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

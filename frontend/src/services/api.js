@@ -1,0 +1,65 @@
+import axios from 'axios'
+
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
+
+const api = axios.create({
+  baseURL: API_BASE,
+  headers: { 'Content-Type': 'application/json' },
+})
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('token')
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+    }
+    return Promise.reject(err)
+  }
+)
+
+// Auth
+export const register = (data) => api.post('/auth/register', data)
+export const login = (data) => api.post('/auth/login', data)
+export const getMe = () => api.get('/auth/me')
+
+// Games
+export const getGames = (params) => api.get('/games', { params })
+export const getGameDetail = (id) => api.get(`/games/${id}`)
+
+// Stats
+export const getTeamStats = (params) => api.get('/stats/teams', { params })
+export const getPitchers = (params) => api.get('/stats/pitchers', { params })
+
+// Live In-Game Prediction
+export const getLivePrediction = (gameId, data) => api.post(`/games/${gameId}/live-predict`, data)
+export const getStandaloneLivePrediction = (data) => api.post('/live-predict', data)
+
+// Subscription
+export const createCheckout = () => api.post('/subscription/create-checkout')
+export const getSubscriptionStatus = () => api.get('/subscription/status')
+export const cancelSubscription = () => api.post('/subscription/cancel')
+
+// Dashboard
+export const getDashboardSummary = () => api.get('/dashboard/summary')
+export const getDashboardLive = () => api.get('/dashboard/live')
+export const getDashboardToday = (params) => api.get('/dashboard/today', { params })
+export const getDashboardTopPicks = () => api.get('/dashboard/top-picks')
+export const getDashboardRecentResults = (params) => api.get('/dashboard/recent-results', { params })
+export const getLeagueStandings = (league) => api.get('/dashboard/league-standings', { params: { league } })
+
+// Admin
+export const getAdminDashboard = () => api.get('/admin/dashboard')
+export const getAdminUsers = () => api.get('/admin/users')
+
+export default api
