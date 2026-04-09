@@ -183,26 +183,30 @@ export default function Dashboard() {
             const homeWin = g.home_score > g.away_score
             return (
               <Link key={g.id} to={`/game/${g.id}`}
-                className="flex items-center gap-3 px-4 py-2.5 hover:bg-dark-700/30 transition-colors">
-                <div className={`w-2 h-2 rounded-full shrink-0 ${
-                  g.is_correct === true ? 'bg-accent-green' : g.is_correct === false ? 'bg-accent-red' : 'bg-gray-600'
-                }`} />
-                <LeagueBadge league={g.league} />
-                <div className="flex items-center gap-1.5 flex-1 min-w-0 text-xs">
-                  <span className={homeWin ? 'opacity-50' : ''}>
-                    <TeamBadge team={g.away_team} size="sm" />
-                  </span>
-                  <span className="text-gray-500 text-[10px]">{g.away_score}-{g.home_score}</span>
-                  <span className={!homeWin ? 'opacity-50' : ''}>
-                    <TeamBadge team={g.home_team} size="sm" />
+                className="block px-3 sm:px-4 py-2.5 hover:bg-dark-700/30 transition-colors">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${
+                    g.is_correct === true ? 'bg-accent-green' : g.is_correct === false ? 'bg-accent-red' : 'bg-gray-600'
+                  }`} />
+                  <LeagueBadge league={g.league} />
+                  <div className="flex items-center gap-1 flex-1 min-w-0">
+                    <TeamLogo team={g.home_team} size="xs" />
+                    <span className={`text-xs font-bold truncate ${homeWin ? 'text-white' : 'text-gray-500'}`}>
+                      {getShortName(g.home_team)}
+                    </span>
+                    <span className="text-[10px] text-gray-600 shrink-0">{g.home_score}-{g.away_score}</span>
+                    <span className={`text-xs font-bold truncate ${!homeWin ? 'text-white' : 'text-gray-500'}`}>
+                      {getShortName(g.away_team)}
+                    </span>
+                    <TeamLogo team={g.away_team} size="xs" />
+                  </div>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
+                    g.is_correct === true ? 'bg-accent-green/10 text-accent-green' :
+                    g.is_correct === false ? 'bg-accent-red/10 text-accent-red' : 'text-gray-600'
+                  }`}>
+                    {g.is_correct === true ? 'HIT' : g.is_correct === false ? 'MISS' : '-'}
                   </span>
                 </div>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                  g.is_correct === true ? 'bg-accent-green/10 text-accent-green' :
-                  g.is_correct === false ? 'bg-accent-red/10 text-accent-red' : 'text-gray-600'
-                }`}>
-                  {g.is_correct === true ? 'HIT' : g.is_correct === false ? 'MISS' : '-'}
-                </span>
               </Link>
             )
           })}
@@ -244,24 +248,26 @@ export default function Dashboard() {
                 const pickHome = pred?.recommended_pick === 'home'
                 return (
                   <Link key={g.id} to={`/game/${g.id}`}
-                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-dark-700/30 transition-colors">
-                    <span className="text-[10px] text-gray-500 w-10 shrink-0">{g.game_time || '--:--'}</span>
-                    <LeagueBadge league={g.league} />
-                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                      <div className={pickHome ? 'ring-1 ring-accent-blue/30 rounded' : ''}>
-                        <TeamBadge team={g.home_team} size="sm" />
-                      </div>
-                      <span className="text-gray-600 text-[10px]">
-                        {g.status === 'final' ? `${g.home_score}-${g.away_score}` : 'vs'}
-                      </span>
-                      <div className={!pickHome ? 'ring-1 ring-accent-purple/30 rounded' : ''}>
-                        <TeamBadge team={g.away_team} size="sm" />
+                    className="block px-3 sm:px-4 py-2.5 hover:bg-dark-700/30 transition-colors">
+                    {/* 1줄: 시간 + 리그 + 팀 vs 팀 + 스코어 */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-gray-500 w-8 shrink-0">{g.game_time || '--:--'}</span>
+                      <LeagueBadge league={g.league} />
+                      <div className="flex items-center gap-1 flex-1 min-w-0">
+                        <TeamLogo team={g.home_team} size="xs" />
+                        <span className="text-xs font-bold text-gray-200 truncate">{getShortName(g.home_team)}</span>
+                        <span className="text-[10px] text-gray-600 shrink-0">
+                          {g.status === 'final' ? `${g.home_score}-${g.away_score}` : 'vs'}
+                        </span>
+                        <span className="text-xs font-bold text-gray-200 truncate">{getShortName(g.away_team)}</span>
+                        <TeamLogo team={g.away_team} size="xs" />
                       </div>
                     </div>
+                    {/* 2줄: AI 예측 */}
                     {pred && (
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2 mt-1 ml-8 sm:ml-10">
                         <span className={`text-[10px] font-bold ${pickHome ? 'text-accent-blue' : 'text-accent-purple'}`}>
-                          {pred.home_win_probability}%-{pred.away_win_probability}%
+                          AI {pickHome ? getShortName(g.home_team) : getShortName(g.away_team)} {Math.max(pred.home_win_probability, pred.away_win_probability)}%
                         </span>
                         <ConfidenceBadge score={pred.confidence_score} size="sm" />
                       </div>
