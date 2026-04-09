@@ -1128,7 +1128,7 @@ function seedUsers() {
   if (existing.c > 0) return
   const insertUser = db.prepare('INSERT INTO users (email, hashed_password, name, nickname, is_admin, subscription_status, plan, privacy_agreed) VALUES (?,?,?,?,?,?,?,?)')
   insertUser.run('admin@ballpredict.com', bcrypt.hashSync('admin123', 10), 'Admin', '운영자', 1, 'active', 'premium', 1)
-  insertUser.run('0000', bcrypt.hashSync('0000', 10), 'PRO 테스트', 'PRO유저', 0, 'active', 'pro', 1)
+  insertUser.run('0000', bcrypt.hashSync('0000', 10), 'PREMIUM 유저', 'VIP유저', 0, 'active', 'premium', 1)
   insertUser.run('demo01', bcrypt.hashSync('demo0000!', 10), '데모유저', '야구팬', 0, 'free', 'free', 1)
   console.log('사용자 계정 생성 완료')
 }
