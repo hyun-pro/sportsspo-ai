@@ -1247,6 +1247,77 @@ app.delete('/api/admin/announcements/:id', authMiddleware, (req, res) => {
   res.json({ ok: true })
 })
 
+// ── 문자 중계 (MLB Play-by-Play) ────────────────────────────
+app.get('/api/games/:id/playbyplay', async (req, res) => {
+  const game = db.prepare('SELECT * FROM games WHERE id = ?').get(req.params.id)
+  if (!game) return res.status(404).json({ detail: '경기를 찾을 수 없습니다' })
+
+  // MLB 경기만 지원
+  if (!game.external_id?.startsWith('mlb_')) {
+    return res.json({ plays: [], supported: false, message: '현재 MLB 경기만 문자중계를 지원합니다' })
+  }
+
+  const gamePk = game.external_id.replace('mlb_', '')
+  try {
+    const data = await fetchJSON(`${MLB_API}/v1.1/game/${gamePk}/feed/live`)
+    if (!data?.liveData?.plays) return res.json({ plays: [], supported: true })
+
+    const allPlays = data.liveData.plays.allPlays || []
+    const currentPlay = data.liveData.plays.currentPlay || null
+
+    // 최근 20개 플레이 (역순 = 최신부터)
+    const plays = allPlays.slice(-20).reverse().map(p => ({
+      inning: p.about?.inning,
+      halfInning: p.about?.halfInning === 'top' ? '초' : '말',
+      isComplete: p.about?.isComplete,
+      batter: p.matchup?.batter?.fullName,
+      batterId: p.matchup?.batter?.id,
+      pitcher: p.matchup?.pitcher?.fullName,
+      pitcherId: p.matchup?.pitcher?.id,
+      result: p.result?.description,
+      resultType: p.result?.type, // atBat, strikeout, etc
+      rbi: p.result?.rbi || 0,
+      awayScore: p.result?.awayScore,
+      homeScore: p.result?.homeScore,
+      count: { balls: p.count?.balls, strikes: p.count?.strikes, outs: p.count?.outs },
+      events: (p.playEvents || []).map(e => ({
+        type: e.type, // pitch, action, etc
+        description: e.details?.description,
+        code: e.details?.code, // B, S, X, F, etc
+        pitchType: e.pitchData?.type?.description, // 4-Seam Fastball, etc
+        speed: e.pitchData?.startSpeed, // mph
+        count: e.count,
+        isStrike: e.details?.isStrike,
+        isBall: e.details?.isBall,
+        isInPlay: e.details?.isInPlay,
+      })),
+    }))
+
+    // 현재 타석 정보
+    const current = currentPlay ? {
+      inning: currentPlay.about?.inning,
+      halfInning: currentPlay.about?.halfInning === 'top' ? '초' : '말',
+      batter: currentPlay.matchup?.batter?.fullName,
+      pitcher: currentPlay.matchup?.pitcher?.fullName,
+      count: currentPlay.count,
+      events: (currentPlay.playEvents || []).map(e => ({
+        type: e.type,
+        description: e.details?.description,
+        code: e.details?.code,
+        pitchType: e.pitchData?.type?.description,
+        speed: e.pitchData?.startSpeed,
+        count: e.count,
+        isStrike: e.details?.isStrike,
+        isBall: e.details?.isBall,
+      })),
+    } : null
+
+    res.json({ plays, current, supported: true, totalPlays: allPlays.length })
+  } catch (e) {
+    res.json({ plays: [], supported: true, error: e.message })
+  }
+})
+
 // ── 경기 검색 (커뮤니티 베팅기록용) ─────────────────────────
 app.get('/api/games/search', (req, res) => {
   const { q, date } = req.query
