@@ -16,12 +16,12 @@ const MLB_LOGO_IDS = {
   'Arizona Diamondbacks': 109, 'San Francisco Giants': 137, 'Colorado Rockies': 115,
 }
 
-// KBO 공식 CDN 로고 (코드 + 연도)
+// KBO 공식 CDN 로고 (2022년 코드 전부 작동 확인)
 const KBO_LOGOS = {
-  'Samsung Lions': 'SS/2022', 'Kia Tigers': 'HT/2022', 'LG Twins': 'LG/2022',
-  'Doosan Bears': 'OB/2025', 'KT Wiz': 'KT/2022', 'SSG Landers': 'SK/2024',
-  'NC Dinos': 'NC/2022', 'Lotte Giants': 'LT/2022', 'Hanwha Eagles': 'HH/2025',
-  'Kiwoom Heroes': 'WO/2022',
+  'Samsung Lions': 'SS', 'Kia Tigers': 'HT', 'LG Twins': 'LG',
+  'Doosan Bears': 'OB', 'KT Wiz': 'KT', 'SSG Landers': 'SK',
+  'NC Dinos': 'NC', 'Lotte Giants': 'LT', 'Hanwha Eagles': 'HH',
+  'Kiwoom Heroes': 'WO',
 }
 
 // NPB 공식 로고 코드
@@ -65,11 +65,10 @@ function getLogoUrl(teamName) {
   const mlbId = MLB_LOGO_IDS[teamName]
   if (mlbId) return `https://www.mlbstatic.com/team-logos/${mlbId}.svg`
 
-  // KBO - 공식 CDN
-  const kboPath = KBO_LOGOS[teamName]
-  if (kboPath) {
-    const [code, year] = kboPath.split('/')
-    return `https://6ptotvmi5753.edge.naverncp.com/KBO_IMAGE/KBOHome/resources/images/emblem/regular/${year}/${code}.png`
+  // KBO - 공식 CDN (2022 전팀 확인됨)
+  const kboCode = KBO_LOGOS[teamName]
+  if (kboCode) {
+    return `https://6ptotvmi5753.edge.naverncp.com/KBO_IMAGE/KBOHome/resources/images/emblem/regular/2022/${kboCode}.png`
   }
 
   // NPB - 공식 npb.jp

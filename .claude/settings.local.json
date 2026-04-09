@@ -93,7 +93,8 @@
       "Bash(curl -s --max-time 10 https://sportsspo-ai.onrender.com/api/health)",
       "Bash(curl -s --max-time 10 https://sportsspo-ai-api.onrender.com/api/health)",
       "Bash(curl -s --max-time 10 https://sportsspo-ai.onrender.com)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "WebFetch(domain:6ptotvmi5753.edge.naverncp.com)"
     ]
   }
 }
