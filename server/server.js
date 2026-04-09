@@ -1164,6 +1164,23 @@ app.get('/api/auth/check-nickname', (req, res) => {
   res.json({ available: !exists })
 })
 
+// ── 경기 검색 (커뮤니티 베팅기록용) ─────────────────────────
+app.get('/api/games/search', (req, res) => {
+  const { q, date } = req.query
+  const targetDate = date || new Date().toISOString().split('T')[0]
+  let games
+  if (q) {
+    games = db.prepare(`SELECT id, sport, league, home_team, away_team, game_date, game_time, status, home_score, away_score
+      FROM games WHERE (home_team LIKE ? OR away_team LIKE ? OR league LIKE ?) AND game_date >= date(?, '-7 days')
+      ORDER BY game_date DESC, game_time ASC LIMIT 30`).all(`%${q}%`, `%${q}%`, `%${q}%`, targetDate)
+  } else {
+    games = db.prepare(`SELECT id, sport, league, home_team, away_team, game_date, game_time, status, home_score, away_score
+      FROM games WHERE game_date BETWEEN date(?, '-1 days') AND date(?, '+1 days')
+      ORDER BY game_date DESC, game_time ASC LIMIT 50`).all(targetDate, targetDate)
+  }
+  res.json(games)
+})
+
 // ── Community Routes ────────────────────────────────────────
 // 글 목록
 app.get('/api/community/posts', (req, res) => {

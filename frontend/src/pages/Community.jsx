@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { getPosts, createPost } from '../services/api'
+import { getPosts, createPost, searchGames } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import UserBadge from '../components/UserBadge'
 
@@ -93,6 +93,26 @@ function WritePost({ onDone }) {
   const [form, setForm] = useState({ title: '', content: '', game_league: '', game_teams: '', bet_odds: '', bet_amount: '', bet_profit: '', bet_result: '' })
   const [loading, setLoading] = useState(false)
   const [showBet, setShowBet] = useState(false)
+  const [gameSearch, setGameSearch] = useState('')
+  const [gameResults, setGameResults] = useState([])
+  const [showGameList, setShowGameList] = useState(false)
+
+  // 경기 검색
+  const doSearch = async (q) => {
+    setGameSearch(q)
+    if (q.length < 1) {
+      // 검색어 없으면 오늘 경기 목록
+      try { const res = await searchGames({}); setGameResults(res.data); setShowGameList(true) } catch {}
+      return
+    }
+    try { const res = await searchGames({ q }); setGameResults(res.data); setShowGameList(true) } catch {}
+  }
+
+  const selectGame = (g) => {
+    setForm(f => ({ ...f, game_league: g.league, game_teams: `${g.home_team} vs ${g.away_team}` }))
+    setGameSearch(`${g.league} | ${g.home_team} vs ${g.away_team}`)
+    setShowGameList(false)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -112,31 +132,59 @@ function WritePost({ onDone }) {
       <textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
         className="input-field min-h-[80px]" placeholder="내용을 입력하세요" required />
 
-      <button type="button" onClick={() => setShowBet(!showBet)}
+      <button type="button" onClick={() => { setShowBet(!showBet); if (!showBet) doSearch('') }}
         className="text-xs text-accent-blue hover:text-blue-400">
         {showBet ? '베팅 정보 숨기기' : '+ 베팅 기록 추가'}
       </button>
 
       {showBet && (
-        <div className="grid grid-cols-2 gap-2 p-3 bg-dark-700/50 rounded-xl">
-          <select value={form.game_league} onChange={e => setForm(f => ({ ...f, game_league: e.target.value }))}
-            className="input-field text-xs py-1.5">
-            <option value="">리그 선택</option>
-            <option>KBO</option><option>MLB</option><option>NPB</option>
-          </select>
-          <input value={form.game_teams} onChange={e => setForm(f => ({ ...f, game_teams: e.target.value }))}
-            className="input-field text-xs py-1.5" placeholder="경기 (예: 삼성 vs 기아)" />
-          <input value={form.bet_odds} onChange={e => setForm(f => ({ ...f, bet_odds: e.target.value }))}
-            className="input-field text-xs py-1.5" placeholder="배당률 (예: 1.85)" type="number" step="0.01" />
-          <input value={form.bet_amount} onChange={e => setForm(f => ({ ...f, bet_amount: e.target.value }))}
-            className="input-field text-xs py-1.5" placeholder="베팅 금액" type="number" />
-          <input value={form.bet_profit} onChange={e => setForm(f => ({ ...f, bet_profit: e.target.value }))}
-            className="input-field text-xs py-1.5" placeholder="수익 금액" type="number" />
-          <select value={form.bet_result} onChange={e => setForm(f => ({ ...f, bet_result: e.target.value }))}
-            className="input-field text-xs py-1.5">
-            <option value="">결과</option>
-            <option value="win">적중</option><option value="lose">미적중</option><option value="pending">진행중</option>
-          </select>
+        <div className="p-3 bg-dark-700/50 rounded-xl space-y-2">
+          {/* 경기 검색/선택 */}
+          <div className="relative">
+            <label className="text-[10px] text-gray-500 mb-1 block">경기 선택 (검색하거나 목록에서 선택)</label>
+            <input value={gameSearch} onChange={e => doSearch(e.target.value)}
+              onFocus={() => doSearch(gameSearch)}
+              className="input-field text-xs py-1.5" placeholder="팀명 또는 리그로 검색..." />
+            {showGameList && gameResults.length > 0 && (
+              <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-dark-800 border border-dark-500 rounded-xl max-h-48 overflow-y-auto scrollbar-hide shadow-card-hover">
+                {gameResults.map(g => (
+                  <button key={g.id} type="button" onClick={() => selectGame(g)}
+                    className="w-full text-left px-3 py-2 hover:bg-dark-600 transition-colors border-b border-dark-700/30 last:border-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-dark-600 text-gray-400">{g.league}</span>
+                      <span className="text-xs text-gray-200 truncate">{g.home_team} vs {g.away_team}</span>
+                      {g.status === 'final' && <span className="text-[9px] text-gray-500 ml-auto">{g.home_score}-{g.away_score}</span>}
+                    </div>
+                    <div className="text-[9px] text-gray-600 mt-0.5">{g.game_date} {g.game_time || ''}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 선택된 경기 표시 */}
+          {form.game_teams && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="font-bold px-1.5 py-0.5 rounded bg-accent-blue/10 text-accent-blue text-[9px]">{form.game_league}</span>
+              <span className="text-gray-300">{form.game_teams}</span>
+              <button type="button" onClick={() => { setForm(f => ({ ...f, game_league: '', game_teams: '' })); setGameSearch('') }}
+                className="text-gray-600 hover:text-accent-red text-[10px] ml-auto">취소</button>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-2">
+            <input value={form.bet_odds} onChange={e => setForm(f => ({ ...f, bet_odds: e.target.value }))}
+              className="input-field text-xs py-1.5" placeholder="배당률 (배트맨 기준)" type="number" step="0.01" />
+            <input value={form.bet_amount} onChange={e => setForm(f => ({ ...f, bet_amount: e.target.value }))}
+              className="input-field text-xs py-1.5" placeholder="베팅 금액 (원)" type="number" />
+            <input value={form.bet_profit} onChange={e => setForm(f => ({ ...f, bet_profit: e.target.value }))}
+              className="input-field text-xs py-1.5" placeholder="수익 금액 (원)" type="number" />
+            <select value={form.bet_result} onChange={e => setForm(f => ({ ...f, bet_result: e.target.value }))}
+              className="input-field text-xs py-1.5">
+              <option value="">결과 선택</option>
+              <option value="win">적중</option><option value="lose">미적중</option><option value="pending">진행중</option>
+            </select>
+          </div>
         </div>
       )}
 

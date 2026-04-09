@@ -13,6 +13,9 @@ import LivePage from './pages/LivePage'
 import Community from './pages/Community'
 import PostDetail from './pages/PostDetail'
 import Guide from './pages/Guide'
+import Notifications from './pages/Notifications'
+import Rankings from './pages/Rankings'
+import Stats from './pages/Stats'
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user, loading } = useAuth()
@@ -32,16 +35,15 @@ export default function App() {
         <Route path="/game/:id" element={<GameDetail />} />
         <Route path="/community" element={<Community />} />
         <Route path="/community/:id" element={<PostDetail />} />
+        <Route path="/rankings" element={<Rankings />} />
+        <Route path="/stats" element={<ProtectedRoute><Stats /></ProtectedRoute>} />
+        <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
         <Route path="/subscription" element={<Subscription />} />
         <Route path="/guide" element={<Guide />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={
-          <ProtectedRoute><UserDashboard /></ProtectedRoute>
-        } />
-        <Route path="/admin" element={
-          <ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>
-        } />
+        <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
       </Routes>
     </Layout>
   )

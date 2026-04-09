@@ -33,6 +33,7 @@ export const checkNickname = (nickname) => api.get('/auth/check-nickname', { par
 // Games
 export const getGames = (params) => api.get('/games', { params })
 export const getGameDetail = (id) => api.get(`/games/${id}`)
+export const searchGames = (params) => api.get('/games/search', { params })
 
 // Stats
 export const getTeamStats = (params) => api.get('/stats/teams', { params })
