@@ -88,7 +88,12 @@
       "Bash(curl -sL https://github.com/cli/cli/releases/download/v2.63.2/gh_2.63.2_windows_amd64.zip -o /tmp/gh.zip)",
       "Bash(unzip -o /tmp/gh.zip -d /tmp/gh_cli)",
       "Bash(ls /tmp/gh_cli/*/bin/)",
-      "Bash(/tmp/gh_cli/bin/gh.exe:*)"
+      "Bash(/tmp/gh_cli/bin/gh.exe:*)",
+      "Bash(curl -s https://sportsspo-ai.onrender.com/api/health)",
+      "Bash(curl -s --max-time 10 https://sportsspo-ai.onrender.com/api/health)",
+      "Bash(curl -s --max-time 10 https://sportsspo-ai-api.onrender.com/api/health)",
+      "Bash(curl -s --max-time 10 https://sportsspo-ai.onrender.com)",
+      "Bash(curl:*)"
     ]
   }
 }

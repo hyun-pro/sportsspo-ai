@@ -771,10 +771,22 @@ async function syncKBOData() {
 
       if (!awayTeam || !homeTeam) return
 
-      // Clean team names
+      // Clean team names — 투수 정보 등 제거하고 팀명만 추출
+      const KBO_TEAM_NAMES = [
+        'Samsung Lions', 'Kia Tigers', 'LG Twins', 'Doosan Bears',
+        'KT Wiz', 'SSG Landers', 'NC Dinos', 'Lotte Giants',
+        'Hanwha Eagles', 'Kiwoom Heroes'
+      ]
       const cleanTeam = (name) => {
-        const parts = name.split('\n').map(s => s.trim()).filter(Boolean)
-        return parts.join(' ')
+        const text = name.split('\n').map(s => s.trim()).filter(Boolean).join(' ')
+        // 알려진 KBO 팀명과 매칭
+        for (const t of KBO_TEAM_NAMES) {
+          if (text.includes(t)) return t
+        }
+        // 매칭 안되면 첫 2~3 단어만 (투수 정보 제거)
+        const words = text.split(/\s+/)
+        if (words.length > 2 && /^[A-Z]/.test(words[2])) return words.slice(0, 3).join(' ')
+        return words.slice(0, 2).join(' ')
       }
 
       const home = cleanTeam(homeTeam)

@@ -9,6 +9,7 @@ import Subscription from './pages/Subscription'
 import UserDashboard from './pages/UserDashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import Dashboard from './pages/Dashboard'
+import LivePage from './pages/LivePage'
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user, loading } = useAuth()
@@ -31,6 +32,7 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-3 sm:py-6">
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/live" element={<LivePage />} />
           <Route path="/games" element={<Home />} />
           <Route path="/game/:id" element={<GameDetail />} />
           <Route path="/login" element={<Login />} />

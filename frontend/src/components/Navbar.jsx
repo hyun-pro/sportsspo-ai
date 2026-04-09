@@ -29,6 +29,10 @@ export default function Navbar() {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-5">
+            <Link to="/live" className="text-accent-red hover:text-red-400 transition-colors text-sm font-bold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+              실시간
+            </Link>
             <Link to="/" className="text-gray-300 hover:text-white transition-colors text-sm font-medium">
               대시보드
             </Link>
@@ -92,6 +96,10 @@ export default function Navbar() {
         {/* Mobile menu */}
         {menuOpen && (
           <div className="md:hidden pb-3 space-y-1">
+            <Link to="/live" onClick={() => setMenuOpen(false)} className="block px-3 py-2 text-accent-red hover:bg-dark-700 rounded-lg text-sm font-bold flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+              실시간
+            </Link>
             <Link to="/" onClick={() => setMenuOpen(false)} className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-dark-700 rounded-lg text-sm">
               대시보드
             </Link>
