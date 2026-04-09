@@ -68,6 +68,117 @@
   }
 }
 
+/* ═══ Betting Board — Premium Match List ═══ */
+.betting-board { max-width: 960px; margin: 0 auto; }
+
+.bb-context { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #1e293b; }
+.bb-context-left { display: flex; align-items: center; gap: 8px; }
+.bb-date { font-size: 15px; font-weight: 700; color: #e2e8f0; }
+.bb-divider { width: 1px; height: 14px; background: #334155; }
+.bb-count { font-size: 11px; color: #64748b; font-weight: 600; }
+.bb-live-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; color: #f87171; background: rgba(248,113,113,0.1); padding: 2px 8px; border-radius: 4px; }
+.bb-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #f87171; animation: pulse 2s infinite; }
+.bb-context-right { display: flex; align-items: center; gap: 6px; }
+.bb-accuracy { font-size: 13px; font-weight: 700; color: #10b981; font-variant-numeric: tabular-nums; }
+.bb-accuracy-sub { font-size: 10px; color: #475569; }
+
+.bb-filters { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; gap: 8px; overflow-x: auto; }
+.bb-filter-group { display: flex; gap: 2px; }
+.bb-filter-btn { padding: 4px 10px; font-size: 11px; font-weight: 600; color: #64748b; background: transparent; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+.bb-filter-btn:hover { color: #cbd5e1; }
+.bb-filter-btn.active { color: #0f172a; background: #e2e8f0; }
+.bb-filter-sort { display: flex; gap: 2px; flex-shrink: 0; }
+.bb-sort-btn { padding: 4px 8px; font-size: 10px; font-weight: 600; color: #475569; background: transparent; border: 1px solid transparent; border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+.bb-sort-btn.active { color: #cbd5e1; border-color: #334155; }
+
+.bb-board { border: 1px solid #1e293b; border-radius: 6px; overflow: hidden; }
+.bb-header { display: grid; grid-template-columns: 52px 44px 1fr 80px 64px 72px 56px; padding: 0 12px; height: 32px; align-items: center; background: #0f172a; border-bottom: 1px solid #1e293b; font-size: 10px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; }
+.bb-h-pick, .bb-h-prob, .bb-h-conf { text-align: center; }
+.bb-h-cta { text-align: right; }
+
+.bb-row { display: block; border-bottom: 1px solid rgba(30,41,59,0.5); transition: background 0.12s; }
+.bb-row:last-child { border-bottom: none; }
+.bb-row:hover { background: rgba(30,41,59,0.3); }
+.bb-row-live { border-left: 2px solid #f87171; }
+
+.bb-row-desktop { display: grid; grid-template-columns: 52px 44px 1fr 80px 64px 72px 56px; padding: 0 12px; height: 48px; align-items: center; }
+.bb-row-mobile { display: none; }
+
+.bb-r-time { font-size: 10px; }
+.bb-r-live { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700; color: #f87171; }
+.bb-r-final { font-size: 10px; color: #475569; }
+.bb-r-scheduled { font-size: 12px; color: #94a3b8; font-variant-numeric: tabular-nums; }
+.bb-r-league { font-size: 10px; color: #475569; font-weight: 600; }
+
+.bb-r-match { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.bb-r-team { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; }
+.bb-r-team-right { justify-content: flex-end; }
+.bb-team-picked { font-size: 13px; font-weight: 700; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bb-team-normal { font-size: 13px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bb-r-score { font-size: 13px; font-weight: 700; color: #94a3b8; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.bb-r-score-sep { color: #334155; }
+.bb-r-vs { font-size: 10px; color: #334155; flex-shrink: 0; padding: 0 4px; }
+
+.bb-r-pick { text-align: center; font-size: 12px; font-weight: 700; color: #e2e8f0; }
+.bb-r-prob { text-align: center; font-size: 14px; font-weight: 800; color: #f1f5f9; font-variant-numeric: tabular-nums; }
+.bb-r-conf { text-align: center; }
+.bb-r-cta { text-align: right; font-size: 10px; color: #475569; transition: color 0.15s; }
+.bb-row:hover .bb-r-cta { color: #cbd5e1; }
+.bb-locked { font-size: 9px; color: #334155; }
+
+.bb-conf-wrap { display: flex; align-items: center; gap: 4px; justify-content: center; }
+.bb-conf-bar { width: 28px; height: 4px; background: #1e293b; border-radius: 2px; overflow: hidden; }
+.bb-conf-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+.bb-conf-num { font-size: 10px; font-weight: 600; color: #94a3b8; font-variant-numeric: tabular-nums; }
+
+.bb-logo-sm { width: 16px; height: 16px; object-fit: contain; flex-shrink: 0; }
+.bb-logo-md { width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
+
+.bb-empty { text-align: center; padding: 80px 0; color: #475569; font-size: 13px; }
+
+/* Recent */
+.bb-recent { margin-top: 24px; padding-top: 16px; border-top: 1px solid #1e293b; }
+.bb-recent-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 11px; color: #475569; font-weight: 600; }
+.bb-recent-link { font-size: 10px; color: #475569; }
+.bb-recent-link:hover { color: #94a3b8; }
+.bb-recent-strip { display: flex; gap: 4px; }
+.bb-recent-dot { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 10px; font-weight: 700; border: 1px solid #1e293b; color: #475569; transition: all 0.12s; }
+.bb-recent-dot:hover { border-color: #334155; }
+.bb-recent-dot.hit { color: #10b981; border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.05); }
+.bb-recent-dot.miss { color: #f87171; border-color: rgba(248,113,113,0.2); background: rgba(248,113,113,0.05); }
+
+/* ── Mobile ── */
+@media (max-width: 639px) {
+  .bb-header { display: none; }
+  .bb-row-desktop { display: none; }
+  .bb-row-mobile { display: block; padding: 12px; }
+
+  .bb-m-top { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+  .bb-m-league { font-size: 10px; font-weight: 600; color: #475569; background: #0f172a; padding: 2px 6px; border-radius: 3px; }
+  .bb-m-time { font-size: 10px; color: #475569; margin-left: auto; font-variant-numeric: tabular-nums; }
+
+  .bb-m-match { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .bb-m-team { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+  .bb-m-team-right { justify-content: flex-end; text-align: right; }
+  .bb-m-label { display: block; font-size: 9px; color: #475569; margin-top: 1px; }
+  .bb-m-center { padding: 0 8px; flex-shrink: 0; }
+  .bb-m-score { font-size: 16px; font-weight: 800; color: #e2e8f0; font-variant-numeric: tabular-nums; }
+  .bb-m-vs { font-size: 11px; color: #334155; font-weight: 700; }
+
+  .bb-m-prediction { display: flex; align-items: center; gap: 12px; padding-top: 8px; border-top: 1px solid #1e293b; }
+  .bb-m-pred-item { }
+  .bb-m-pred-label { display: block; font-size: 9px; color: #475569; }
+  .bb-m-pred-value { font-size: 13px; font-weight: 700; color: #e2e8f0; font-variant-numeric: tabular-nums; }
+  .bb-m-pred-pick { color: #38bdf8; }
+  .bb-m-cta { margin-left: auto; font-size: 10px; color: #475569; }
+  .bb-m-locked { padding-top: 8px; border-top: 1px solid #1e293b; text-align: center; font-size: 10px; color: #334155; }
+
+  .bb-context { padding: 8px 0; }
+  .bb-date { font-size: 13px; }
+  .bb-filters { padding: 6px 0; }
+  .bb-recent-strip { flex-wrap: wrap; }
+}
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
