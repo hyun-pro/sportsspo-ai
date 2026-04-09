@@ -2228,9 +2228,10 @@ async function syncESPNSports() {
         const homeLogo = homeTeam.team?.logo || null
         const awayLogo = awayTeam.team?.logo || null
 
-        // 라이브 데이터
+        // 라이브 데이터 + 배당
         const period = ev.status?.period ? `${ev.status.period}` : null
         const clock = ev.status?.displayClock || null
+        const odds = comp.odds?.[0]
         const liveData = {
           statusDetail: ev.status?.type?.shortDetail || '',
           period: ev.status?.period,
@@ -2239,6 +2240,9 @@ async function syncESPNSports() {
           awaySets: awayTeam.linescores?.map(l => l.value) || [],
           homeRecord: homeTeam.records?.[0]?.summary || '',
           awayRecord: awayTeam.records?.[0]?.summary || '',
+          overUnder: odds?.overUnder || null,
+          spread: odds?.spread || null,
+          details: odds?.details || null,
         }
 
         const existing = db.prepare('SELECT id FROM games WHERE external_id = ?').get(externalId)
