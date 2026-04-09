@@ -1525,6 +1525,29 @@ async function syncLiveScores() {
   }
 }
 
+// ── KBO 팀명 정리 (기존 DB에 투수 정보 포함된 팀명 수정) ─────
+function cleanKBOTeamNames() {
+  const KBO_TEAMS = [
+    'Samsung Lions', 'Kia Tigers', 'LG Twins', 'Doosan Bears',
+    'KT Wiz', 'SSG Landers', 'NC Dinos', 'Lotte Giants',
+    'Hanwha Eagles', 'Kiwoom Heroes'
+  ]
+  const dirty = db.prepare("SELECT id, home_team, away_team FROM games WHERE league = 'KBO'").all()
+  let fixed = 0
+  for (const g of dirty) {
+    let newHome = g.home_team, newAway = g.away_team
+    for (const t of KBO_TEAMS) {
+      if (g.home_team.includes(t) && g.home_team !== t) newHome = t
+      if (g.away_team.includes(t) && g.away_team !== t) newAway = t
+    }
+    if (newHome !== g.home_team || newAway !== g.away_team) {
+      db.prepare('UPDATE games SET home_team = ?, away_team = ? WHERE id = ?').run(newHome, newAway, g.id)
+      fixed++
+    }
+  }
+  if (fixed > 0) console.log(`[cleanup] KBO 팀명 ${fixed}개 수정됨`)
+}
+
 // ── 프론트엔드 정적 파일 서빙 ────────────────────────────────
 const clientBuildPath = join(__dirname, '..', 'frontend', 'dist')
 app.use(express.static(clientBuildPath))
@@ -1578,9 +1601,11 @@ let server
 
 async function start() {
   seedUsers()
+  cleanKBOTeamNames()
 
   // 초기 데이터 동기화
   await syncAllData()
+  cleanKBOTeamNames() // 동기화 후에도 한번 더
 
   // 주기적 동기화 스케줄
   syncTimer = setInterval(syncAllData, SYNC_INTERVAL)
