@@ -151,6 +151,26 @@ db.exec(`
     FOREIGN KEY (post_id) REFERENCES posts(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+  CREATE TABLE IF NOT EXISTS support_tickets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    category TEXT NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    status TEXT DEFAULT 'pending',
+    admin_reply TEXT,
+    admin_reply_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+  CREATE TABLE IF NOT EXISTS announcements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    category TEXT DEFAULT 'notice',
+    is_pinned INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
   CREATE TABLE IF NOT EXISTS notifications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -1162,6 +1182,69 @@ app.get('/api/auth/check-nickname', (req, res) => {
   const { nickname } = req.query
   const exists = db.prepare('SELECT id FROM users WHERE nickname = ?').get(nickname)
   res.json({ available: !exists })
+})
+
+// ── Support (고객센터) ───────────────────────────────────────
+// 문의 작성
+app.post('/api/support/tickets', authMiddleware, (req, res) => {
+  const { category, title, content } = req.body
+  if (!category || !title || !content) return res.status(400).json({ detail: '카테고리, 제목, 내용을 모두 입력하세요' })
+  const result = db.prepare('INSERT INTO support_tickets (user_id, category, title, content) VALUES (?,?,?,?)').run(req.user.id, category, title, content)
+  res.status(201).json({ id: result.lastInsertRowid })
+})
+
+// 내 문의 목록
+app.get('/api/support/tickets', authMiddleware, (req, res) => {
+  const tickets = db.prepare('SELECT * FROM support_tickets WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id)
+  res.json(tickets)
+})
+
+// 문의 상세
+app.get('/api/support/tickets/:id', authMiddleware, (req, res) => {
+  const ticket = db.prepare('SELECT t.*, u.nickname, u.email FROM support_tickets t JOIN users u ON u.id = t.user_id WHERE t.id = ?').get(req.params.id)
+  if (!ticket) return res.status(404).json({ detail: '문의를 찾을 수 없습니다' })
+  if (ticket.user_id !== req.user.id && !req.user.is_admin) return res.status(403).json({ detail: '권한이 없습니다' })
+  res.json(ticket)
+})
+
+// 관리자: 전체 문의 목록
+app.get('/api/admin/support/tickets', authMiddleware, (req, res) => {
+  if (!req.user.is_admin) return res.status(403).json({ detail: '관리자 전용' })
+  const { status } = req.query
+  let q = 'SELECT t.*, u.nickname, u.email FROM support_tickets t JOIN users u ON u.id = t.user_id'
+  const params = []
+  if (status) { q += ' WHERE t.status = ?'; params.push(status) }
+  q += ' ORDER BY t.created_at DESC'
+  res.json(db.prepare(q).all(...params))
+})
+
+// 관리자: 답변
+app.put('/api/admin/support/tickets/:id/reply', authMiddleware, (req, res) => {
+  if (!req.user.is_admin) return res.status(403).json({ detail: '관리자 전용' })
+  const { reply } = req.body
+  if (!reply) return res.status(400).json({ detail: '답변 내용을 입력하세요' })
+  db.prepare('UPDATE support_tickets SET admin_reply = ?, admin_reply_at = CURRENT_TIMESTAMP, status = ? WHERE id = ?').run(reply, 'replied', req.params.id)
+  res.json({ ok: true })
+})
+
+// ── Announcements (공지사항) ────────────────────────────────
+app.get('/api/announcements', (req, res) => {
+  const posts = db.prepare('SELECT * FROM announcements ORDER BY is_pinned DESC, created_at DESC LIMIT 20').all()
+  res.json(posts)
+})
+
+app.post('/api/admin/announcements', authMiddleware, (req, res) => {
+  if (!req.user.is_admin) return res.status(403).json({ detail: '관리자 전용' })
+  const { title, content, category, is_pinned } = req.body
+  if (!title || !content) return res.status(400).json({ detail: '제목과 내용을 입력하세요' })
+  const result = db.prepare('INSERT INTO announcements (title, content, category, is_pinned) VALUES (?,?,?,?)').run(title, content, category || 'notice', is_pinned ? 1 : 0)
+  res.status(201).json({ id: result.lastInsertRowid })
+})
+
+app.delete('/api/admin/announcements/:id', authMiddleware, (req, res) => {
+  if (!req.user.is_admin) return res.status(403).json({ detail: '관리자 전용' })
+  db.prepare('DELETE FROM announcements WHERE id = ?').run(req.params.id)
+  res.json({ ok: true })
 })
 
 // ── 경기 검색 (커뮤니티 베팅기록용) ─────────────────────────

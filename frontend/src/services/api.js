@@ -69,6 +69,18 @@ export const deleteComment = (id) => api.delete(`/community/comments/${id}`)
 export const getNotifications = () => api.get('/notifications')
 export const markAllRead = () => api.put('/notifications/read-all')
 
+// Support (고객센터)
+export const createTicket = (data) => api.post('/support/tickets', data)
+export const getMyTickets = () => api.get('/support/tickets')
+export const getTicket = (id) => api.get(`/support/tickets/${id}`)
+export const getAdminTickets = (params) => api.get('/admin/support/tickets', { params })
+export const replyTicket = (id, data) => api.put(`/admin/support/tickets/${id}/reply`, data)
+
+// Announcements (공지사항)
+export const getAnnouncements = () => api.get('/announcements')
+export const createAnnouncement = (data) => api.post('/admin/announcements', data)
+export const deleteAnnouncement = (id) => api.delete(`/admin/announcements/${id}`)
+
 // Admin
 export const getAdminStats = () => api.get('/admin/stats')
 export const getAdminDashboard = () => api.get('/admin/dashboard')

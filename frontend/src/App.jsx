@@ -16,6 +16,8 @@ import Guide from './pages/Guide'
 import Notifications from './pages/Notifications'
 import Rankings from './pages/Rankings'
 import Stats from './pages/Stats'
+import Support from './pages/Support'
+import Announcements from './pages/Announcements'
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user, loading } = useAuth()
@@ -40,6 +42,8 @@ export default function App() {
         <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
         <Route path="/subscription" element={<Subscription />} />
         <Route path="/guide" element={<Guide />} />
+        <Route path="/support" element={<Support />} />
+        <Route path="/announcements" element={<Announcements />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
