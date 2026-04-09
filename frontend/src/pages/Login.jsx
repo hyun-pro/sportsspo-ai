@@ -80,7 +80,7 @@ export default function Login() {
 
         <div className="mt-6 p-3 bg-dark-700 rounded-lg text-xs text-gray-400">
           <div className="font-semibold text-gray-300 mb-1">테스트 계정</div>
-          <div>ID: <span className="text-gray-200">0000</span> / PW: <span className="text-gray-200">0000</span> (PRO)</div>
+          <div>ID: <span className="text-gray-200">0000</span> / PW: <span className="text-gray-200">0000</span> (PREMIUM)</div>
         </div>
       </div>
     </div>

@@ -96,7 +96,7 @@ export default function LivePage() {
             {LEAGUE_LABELS[l] || '전체'}
           </button>
         ))}
-        <span className="ml-auto text-[10px] text-gray-600 self-center shrink-0">15초 자동갱신</span>
+        <span className="ml-auto text-[10px] text-gray-600 self-center shrink-0">10초 자동갱신</span>
       </div>
 
       {/* ── 실시간 진행 중 ── */}
