@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { PricingBanner } from './PricingCard'
 import { getNotifications, getAnnouncements } from '../services/api'
+import BetCalculator from './BetCalculator'
 
 const I = (d) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><path d={d} strokeLinecap="round" strokeLinejoin="round" /></svg>
 
@@ -199,6 +200,9 @@ export default function Layout({ children }) {
           {children}
         </div>
       </main>
+
+      {/* ── Bet Calculator (플로팅) ── */}
+      <BetCalculator />
 
       {/* ── Mobile Bottom Tab Bar ── */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 glass border-t border-dark-600/50">

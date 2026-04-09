@@ -84,6 +84,14 @@ export const getAnnouncements = () => api.get('/announcements')
 export const createAnnouncement = (data) => api.post('/admin/announcements', data)
 export const deleteAnnouncement = (id) => api.delete(`/admin/announcements/${id}`)
 
+// Betman
+export const getBetmanGames = (params) => api.get('/betman/games', { params })
+
+// Bet Calculator
+export const getSavedBets = () => api.get('/bets/saved')
+export const saveBet = (data) => api.post('/bets/save', data)
+export const deleteSavedBet = (id) => api.delete(`/bets/saved/${id}`)
+
 // Admin
 export const getAdminStats = () => api.get('/admin/stats')
 export const getAdminDashboard = () => api.get('/admin/dashboard')

@@ -151,6 +151,17 @@ db.exec(`
     FOREIGN KEY (post_id) REFERENCES posts(id),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+  CREATE TABLE IF NOT EXISTS saved_bets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT,
+    selections TEXT NOT NULL,
+    total_odds REAL,
+    bet_amount INTEGER,
+    potential_win INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
   CREATE TABLE IF NOT EXISTS live_chats (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     game_id INTEGER NOT NULL,
@@ -1253,6 +1264,53 @@ app.post('/api/admin/announcements', authMiddleware, (req, res) => {
 app.delete('/api/admin/announcements/:id', authMiddleware, (req, res) => {
   if (!req.user.is_admin) return res.status(403).json({ detail: '관리자 전용' })
   db.prepare('DELETE FROM announcements WHERE id = ?').run(req.params.id)
+  res.json({ ok: true })
+})
+
+// ── 배트맨 데이터 프록시 ─────────────────────────────────────
+app.get('/api/betman/games', async (req, res) => {
+  try {
+    const response = await fetch('https://www.betman.co.kr/gameinfo/inqItrstGameList.do', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0' },
+      body: JSON.stringify({ _sbmInfo: { debugMode: 'false' }, GM_ID: req.query.gm_id || 'G102', GM_TS: req.query.gm_ts || '' }),
+    })
+    const data = await response.json()
+    const games = (data.dl_itrstGameList || []).map(g => ({
+      home: (g.HOME_S_NM || g.HOME_NM || '').trim(),
+      away: (g.AWAY_S_NM || g.AWAY_NM || '').trim(),
+      date: g.MCH_DTM,
+      round: g.GM_TS,
+      gameId: g.GM_ID,
+      seq: g.GM_SEQ,
+      league: g.GM_LEAG_CD,
+      stadium: (g.STDM_NM || '').trim(),
+    }))
+    // 최근 경기만 (향후 2주)
+    res.json({ games: games.slice(0, 200), total: games.length })
+  } catch (e) {
+    res.json({ games: [], total: 0, error: e.message })
+  }
+})
+
+// ── 배당 계산기 저장/불러오기 ────────────────────────────────
+app.get('/api/bets/saved', authMiddleware, (req, res) => {
+  const bets = db.prepare('SELECT * FROM saved_bets WHERE user_id = ? ORDER BY created_at DESC LIMIT 50').all(req.user.id)
+  res.json(bets.map(b => ({ ...b, selections: JSON.parse(b.selections) })))
+})
+
+app.post('/api/bets/save', authMiddleware, (req, res) => {
+  const { name, selections, total_odds, bet_amount, potential_win } = req.body
+  if (!selections?.length) return res.status(400).json({ detail: '선택한 경기가 없습니다' })
+  const result = db.prepare('INSERT INTO saved_bets (user_id, name, selections, total_odds, bet_amount, potential_win) VALUES (?,?,?,?,?,?)')
+    .run(req.user.id, name || `배팅 ${new Date().toLocaleDateString('ko-KR')}`, JSON.stringify(selections), total_odds || 0, bet_amount || 0, potential_win || 0)
+  res.status(201).json({ id: result.lastInsertRowid })
+})
+
+app.delete('/api/bets/saved/:id', authMiddleware, (req, res) => {
+  const bet = db.prepare('SELECT * FROM saved_bets WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id)
+  if (!bet) return res.status(404).json({ detail: '찾을 수 없습니다' })
+  db.prepare('DELETE FROM saved_bets WHERE id = ?').run(req.params.id)
   res.json({ ok: true })
 })
 
