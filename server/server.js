@@ -1314,6 +1314,8 @@ app.get('/api/games', optionalAuth, (req, res) => {
   if (game_date) { where.push('g.game_date = ?'); params.push(game_date) }
   if (min_confidence) { where.push('p.confidence_score >= ?'); params.push(parseInt(min_confidence)) }
   if (sport) { where.push('g.sport = ?'); params.push(sport) }
+  // 날짜 필터 없으면 오늘부터 보여주기
+  if (!game_date) { const today = new Date().toISOString().split('T')[0]; where.push('g.game_date >= ?'); params.push(today) }
   const whereClause = where.length ? 'WHERE ' + where.join(' AND ') : ''
   const offset = (parseInt(page) - 1) * parseInt(per_page)
 
@@ -1321,31 +1323,41 @@ app.get('/api/games', optionalAuth, (req, res) => {
   const games = db.prepare(`
     SELECT g.*, p.id as pred_id, p.home_win_probability, p.away_win_probability,
       p.recommended_pick, p.confidence_score, p.team_form_score, p.pitcher_score,
-      p.home_advantage_score, p.elo_diff_score, p.h2h_score
+      p.home_advantage_score, p.elo_diff_score, p.h2h_score, p.bullpen_score, p.recent_form_score
     FROM games g LEFT JOIN predictions p ON p.game_id = g.id
-    ${whereClause} ORDER BY g.game_date DESC, g.id LIMIT ? OFFSET ?
+    ${whereClause} ORDER BY g.game_date ASC, g.game_time ASC, g.id LIMIT ? OFFSET ?
   `).all(...params, parseInt(per_page), offset)
 
+  // 선발투수 상세 스탯 가져오기
+  const getPitcherStats = db.prepare('SELECT * FROM pitchers WHERE name = ?')
+
   const premium = isPremium(req.user)
-  const result = games.map((g, i) => ({
-    id: g.id, league: g.league, home_team: g.home_team, away_team: g.away_team,
-    home_team_kr: TEAM_NAME_KR[g.home_team] || null,
-    away_team_kr: TEAM_NAME_KR[g.away_team] || null,
-    game_date: g.game_date, game_time: g.game_time, status: g.status,
-    home_score: g.home_score, away_score: g.away_score,
-    home_odds: g.home_odds, away_odds: g.away_odds,
-    home_pitcher: g.home_pitcher, away_pitcher: g.away_pitcher, created_at: g.created_at,
-    prediction: g.pred_id ? {
-      id: g.pred_id,
-      home_win_probability: (!premium && i >= 3) ? 0 : g.home_win_probability,
-      away_win_probability: (!premium && i >= 3) ? 0 : g.away_win_probability,
-      recommended_pick: (!premium && i >= 3) ? 'locked' : g.recommended_pick,
-      confidence_score: (!premium && i >= 3) ? 0 : g.confidence_score,
-      team_form_score: g.team_form_score, pitcher_score: g.pitcher_score,
-      home_advantage_score: g.home_advantage_score, elo_diff_score: g.elo_diff_score, h2h_score: g.h2h_score,
-      bullpen_score: g.bullpen_score, recent_form_score: g.recent_form_score,
-    } : null,
-  }))
+  const result = games.map((g, i) => {
+    const hpStats = g.home_pitcher ? getPitcherStats.get(g.home_pitcher) : null
+    const apStats = g.away_pitcher ? getPitcherStats.get(g.away_pitcher) : null
+    return {
+      id: g.id, sport: g.sport, league: g.league, home_team: g.home_team, away_team: g.away_team,
+      home_team_kr: TEAM_NAME_KR[g.home_team] || null,
+      away_team_kr: TEAM_NAME_KR[g.away_team] || null,
+      home_logo: g.home_logo, away_logo: g.away_logo,
+      game_date: g.game_date, game_time: g.game_time, status: g.status,
+      home_score: g.home_score, away_score: g.away_score,
+      home_odds: g.home_odds, away_odds: g.away_odds,
+      home_pitcher: g.home_pitcher, away_pitcher: g.away_pitcher,
+      home_pitcher_stats: hpStats ? { era: hpStats.era, whip: hpStats.whip, wins: hpStats.wins, losses: hpStats.losses, ip: hpStats.innings_pitched, k: hpStats.strikeouts } : null,
+      away_pitcher_stats: apStats ? { era: apStats.era, whip: apStats.whip, wins: apStats.wins, losses: apStats.losses, ip: apStats.innings_pitched, k: apStats.strikeouts } : null,
+      prediction: g.pred_id ? {
+        id: g.pred_id,
+        home_win_probability: (!premium && i >= 1) ? 0 : g.home_win_probability,
+        away_win_probability: (!premium && i >= 1) ? 0 : g.away_win_probability,
+        recommended_pick: (!premium && i >= 1) ? 'locked' : g.recommended_pick,
+        confidence_score: (!premium && i >= 1) ? 0 : g.confidence_score,
+        team_form_score: g.team_form_score, pitcher_score: g.pitcher_score,
+        home_advantage_score: g.home_advantage_score, elo_diff_score: g.elo_diff_score, h2h_score: g.h2h_score,
+        bullpen_score: g.bullpen_score, recent_form_score: g.recent_form_score,
+      } : null,
+    }
+  })
 
   res.json({ games: result, total, page: parseInt(page), per_page: parseInt(per_page) })
 })
