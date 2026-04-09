@@ -1972,8 +1972,13 @@ const ESPN_LEAGUES = [
   { sport: 'soccer', espn: 'fra.1', league: 'LIGUE1', name: '리그1' },
   { sport: 'soccer', espn: 'uefa.champions', league: 'UCL', name: '챔피언스리그' },
   { sport: 'soccer', espn: 'jpn.1', league: 'J_LEAGUE', name: 'J리그' },
+  { sport: 'soccer', espn: 'usa.1', league: 'MLS', name: 'MLS' },
+  { sport: 'soccer', espn: 'uefa.europa', league: 'UEL', name: '유로파리그' },
+  { sport: 'soccer', espn: 'afc.champions', league: 'ACL', name: 'AFC챔스' },
   // 농구
   { sport: 'basketball', espn: 'nba', league: 'NBA', name: 'NBA', espnSport: 'basketball' },
+  // 아이스하키
+  { sport: 'hockey', espn: 'nhl', league: 'NHL', name: 'NHL', espnSport: 'hockey' },
 ]
 
 async function syncESPNSports() {

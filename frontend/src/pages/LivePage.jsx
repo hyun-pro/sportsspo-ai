@@ -5,7 +5,8 @@ import { getDashboardLive, getDashboardToday } from '../services/api'
 const LEAGUE_LABELS = {
   '': '전체', KBO: 'KBO', MLB: 'MLB', NPB: 'NPB',
   EPL: 'EPL', LALIGA: '라리가', BUNDESLIGA: '분데스', SERIE_A: '세리에A',
-  LIGUE1: '리그1', UCL: 'UCL', J_LEAGUE: 'J리그', NBA: 'NBA',
+  LIGUE1: '리그1', UCL: 'UCL', UEL: '유로파', ACL: 'AFC', J_LEAGUE: 'J리그', MLS: 'MLS',
+  NBA: 'NBA', NHL: 'NHL',
 }
 import { TeamLogo } from '../components/TeamBadge'
 import LeagueBadge from '../components/LeagueBadge'
@@ -82,7 +83,7 @@ export default function LivePage() {
 
       {/* 스포츠 + 리그 필터 */}
       <div className="flex gap-1 flex-wrap">
-        {['', 'KBO', 'MLB', 'NPB', 'EPL', 'LALIGA', 'BUNDESLIGA', 'SERIE_A', 'LIGUE1', 'UCL', 'J_LEAGUE', 'NBA'].map(l => (
+        {Object.keys(LEAGUE_LABELS).map(l => (
           <button
             key={l}
             onClick={() => setFilter(l)}

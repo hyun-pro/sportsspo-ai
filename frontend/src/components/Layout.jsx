@@ -11,9 +11,10 @@ const NAV_MAIN = [
 ]
 
 const NAV_SPORTS = [
-  { path: '/games?sport=baseball', label: '야구', emoji: '⚾', icon: I('M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6m6 0V9a2 2 0 012-2h2a2 2 0 012 2v10') },
-  { path: '/games?sport=soccer', label: '축구', emoji: '⚽', icon: I('M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6m6 0V9a2 2 0 012-2h2a2 2 0 012 2v10') },
-  { path: '/games?sport=basketball', label: '농구', emoji: '🏀', icon: I('M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6m6 0V9a2 2 0 012-2h2a2 2 0 012 2v10') },
+  { path: '/games?sport=baseball', label: '야구', emoji: '⚾' },
+  { path: '/games?sport=soccer', label: '축구', emoji: '⚽' },
+  { path: '/games?sport=basketball', label: '농구', emoji: '🏀' },
+  { path: '/games?sport=hockey', label: '하키', emoji: '🏒' },
 ]
 
 const NAV_SUB = [
