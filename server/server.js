@@ -1083,12 +1083,13 @@ async function syncNPBData() {
           npbInningHalf = inningMatch[2] === '表' ? 'Top' : 'Bottom'
         }
         // Check if it's final or in progress
-        if (text.includes('回') && !text.includes('試合終了')) {
-          status = 'live'
-        } else if (dateStr < todayStr) {
+        if (text.includes('試合終了') || (scoreMatch && dateStr < todayStr)) {
           status = 'final'
-        } else if (dateStr === todayStr && text.includes('回')) {
+        } else if (text.includes('回') && !text.includes('試合終了')) {
           status = 'live'
+        } else if (scoreMatch && dateStr <= todayStr) {
+          // 스코어 있는데 회 표시 없으면 종료
+          status = 'final'
         }
       }
 
@@ -2360,6 +2361,10 @@ async function start() {
     console.log(`\n  스포츠스포AI: http://0.0.0.0:${PORT}`)
     console.log(`  Environment: ${NODE_ENV}`)
     console.log(`  Health check: /api/health\n`)
+
+    // 오래된 live 경기 자동 종료 (6시간 이상 live면 final로)
+    db.prepare("UPDATE games SET status = 'final' WHERE status = 'live' AND game_date < date('now')").run()
+    db.prepare("UPDATE games SET status = 'final' WHERE status = 'live' AND home_score IS NOT NULL AND away_score IS NOT NULL AND game_date = date('now') AND game_time IS NOT NULL AND game_time < time('now', '-4 hours')").run()
 
     // 서버 시작 후 백그라운드로 데이터 동기화
     syncAllData().then(() => cleanKBOTeamNames()).catch(console.error)
